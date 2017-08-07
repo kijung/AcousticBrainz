@@ -155,123 +155,125 @@ def extractFeatures(features, scalar, mode):
 		train.append(flatten(m))
 	train_features = train	
 	return train_features, train_labels.values(), scalar
-#data = readjson('discogs_train_train_rhythm.json')
-data = readjson('discogs_train_train_tonal.json')
-genres = getGenres(data).keys()
-genres.sort()
-#subgenres = []
-main_genres = dict()
-for gen in genres:
-	if '---' in gen:
-		main_genres[gen.split('---')[0]].append(gen)
-	else:
-		main_genres[gen] = []
 
-data = 0
-#gc.collect()
-data = readjson('discogs_train_test_tonal.json')
-keys = list(data.keys())
-data = 0
-#gc.collect()
-#features = data[list(data.keys())[0]]['features'].keys()
-#features = ['beats_count', 'bpm', 'danceability', 'beats_loudness_band_ratio'] #57
-#features = ['bpm_histogram_first_peak_bpm', 'bpm_histogram_first_peak_spread', 'bpm_histogram_first_peak_weight', 'bpm_histogram_second_peak_bpm', 'bpm_histogram_second_peak_spread', 'bpm_histogram_second_peak_weight', 'beats_count', 'bpm', 'beats_loudness', 'danceability', 'beats_loudness_band_ratio']
-features = dict()
-features['tonal'] = ['tuning_frequency', 'thpcp', 'hpcp', 'key_strength', 'chords_strength', 'chords_histogram', 'chords_changes_rate', 'chords_number_rate', 'tuning_diatonic_strength', 'tuning_equal_tempered_deviation', 'tuning_nontempered_energy_ratio']
-features['rhythm'] = ['bpm_histogram_first_peak_bpm', 'bpm_histogram_first_peak_spread', 'bpm_histogram_first_peak_weight', 'bpm_histogram_second_peak_bpm', 'bpm_histogram_second_peak_spread', 'bpm_histogram_second_peak_weight', 'beats_count', 'bpm', 'beats_loudness', 'danceability']
-scalar = dict()
-mode = 'train'
-train_features, train_labels, scalar = extractFeatures(features, scalar, mode)
-
-#gc.collect()
-mode = 'test'
-test_features, test_labels, scalar = extractFeatures(features, scalar, mode)
-#gc.collect()
-genre_labels = dict()
-subgenre_labels = dict()
-for genre in main_genres.keys():
-	t_features, train_label, test_label = getLabels(genre, train_labels, test_labels, train_features)
-	valid_accur, test_accur, test_prediction = classify(t_features, train_label, test_features, test_label, genre = genre, classifier = 'RFC')
-	print(genre, test_accur)
-	#new_prediction = [0 for n in range(len(test_label))]
-
-	# make a copy of test_prediction
-	"""
-	for pred in test_prediction:
-		if pred[0] > pred[1]:
-			new_prediction.append(0)
+if __name__ == "__main__":
+	#data = readjson('discogs_train_train_rhythm.json')
+	data = readjson('discogs_train_train_tonal.json')
+	genres = getGenres(data).keys()
+	genres.sort()
+	#subgenres = []
+	main_genres = dict()
+	for gen in genres:
+		if '---' in gen:
+			main_genres[gen.split('---')[0]].append(gen)
 		else:
-			new_prediction.append(1)
-	"""
-	t_features = []
-	train_label = []
-	test_label = []
-	#gc.collect()
-	genre_labels[genre] = test_prediction
-	subgenre_labels[genre] = dict()
-	for subgenre in main_genres[genre]:
-		subgenre_labels[genre][subgenre] = dict()
-		t_features, train_label, test_label = getLabels(subgenre, train_labels, test_labels, train_features)
+			main_genres[gen] = []
 
-		valid_accur, test_accur, subgenre_prediction = classify(t_features, train_label, test_features, test_label, genre = subgenre, classifier = 'SVM')
-		#print(subgenre, test_accur)
-		subgenre_labels[genre][subgenre] = subgenre_prediction
+	data = 0
+	#gc.collect()
+	data = readjson('discogs_train_test_tonal.json')
+	keys = list(data.keys())
+	data = 0
+	#gc.collect()
+	#features = data[list(data.keys())[0]]['features'].keys()
+	#features = ['beats_count', 'bpm', 'danceability', 'beats_loudness_band_ratio'] #57
+	#features = ['bpm_histogram_first_peak_bpm', 'bpm_histogram_first_peak_spread', 'bpm_histogram_first_peak_weight', 'bpm_histogram_second_peak_bpm', 'bpm_histogram_second_peak_spread', 'bpm_histogram_second_peak_weight', 'beats_count', 'bpm', 'beats_loudness', 'danceability', 'beats_loudness_band_ratio']
+	features = dict()
+	features['tonal'] = ['tuning_frequency', 'thpcp', 'hpcp', 'key_strength', 'chords_strength', 'chords_histogram', 'chords_changes_rate', 'chords_number_rate', 'tuning_diatonic_strength', 'tuning_equal_tempered_deviation', 'tuning_nontempered_energy_ratio']
+	features['rhythm'] = ['bpm_histogram_first_peak_bpm', 'bpm_histogram_first_peak_spread', 'bpm_histogram_first_peak_weight', 'bpm_histogram_second_peak_bpm', 'bpm_histogram_second_peak_spread', 'bpm_histogram_second_peak_weight', 'beats_count', 'bpm', 'beats_loudness', 'danceability']
+	scalar = dict()
+	mode = 'train'
+	train_features, train_labels, scalar = extractFeatures(features, scalar, mode)
+
+	#gc.collect()
+	mode = 'test'
+	test_features, test_labels, scalar = extractFeatures(features, scalar, mode)
+	#gc.collect()
+	genre_labels = dict()
+	subgenre_labels = dict()
+	for genre in main_genres.keys():
+		t_features, train_label, test_label = getLabels(genre, train_labels, test_labels, train_features)
+		valid_accur, test_accur, test_prediction = classify(t_features, train_label, test_features, test_label, genre = genre, classifier = 'RFC')
+		print(genre, test_accur)
+		#new_prediction = [0 for n in range(len(test_label))]
+
+		# make a copy of test_prediction
+		"""
+		for pred in test_prediction:
+			if pred[0] > pred[1]:
+				new_prediction.append(0)
+			else:
+				new_prediction.append(1)
+		"""
 		t_features = []
 		train_label = []
 		test_label = []
 		#gc.collect()
-train_features = []
-train_labels = []
-test_labels = []
-test_features = []
-gc.collect()
+		genre_labels[genre] = test_prediction
+		subgenre_labels[genre] = dict()
+		for subgenre in main_genres[genre]:
+			subgenre_labels[genre][subgenre] = dict()
+			t_features, train_label, test_label = getLabels(subgenre, train_labels, test_labels, train_features)
 
-writeToTsv(genre_labels, subgenre_labels, keys)
-#writeToFile(record, path = 'discogs_results_subgenres_combination.json')
-#stat = stats(f)
-#pickleData(files, name = 'discogs_train_test_mean_mfcc.txt')
-"""
-		if record[genre] < test_accur:
-			for n, prediction in enumerate(test_prediction):
-				#new_prediction[n] = prediction
-				if prediction[0] > prediction[1] and subgenre_prediction[n][0] < subgenre_prediction[n][1]  and prediction[0] < subgenre_prediction[n][1]:
-					new_prediction[n] = 1
-				elif prediction[0] <= prediction[1] and subgenre_prediction[n][0] < subgenre_prediction[n][1]:
-					new_prediction[n] = 1
-"""
-"""
-	TP, FP, TN, FN = 0, 0, 0, 0
-	#print(genre_label[0])
-	for n, label in enumerate(genre_label):
-		#print(label, new_prediction[n])
-		if label == new_prediction[n]:
-			if label == 1:
-				TP += 1
-			else:
-				TN += 1
-		else:
-			if label == 0:
-				FP+= 1
-			else:
-				FN+= 1
-	accuracy = float(TP + TN)/ float(TP + TN + FP + FN)
-	print('Final Prediction: ', genre, accuracy)
-		#record[genre] = test_accur			
-"""
-"""
-train = unpickleData(path = "discogs_train_train_mean_mfcc.txt")
-test = unpickleData(path = "discogs_train_test_mean_mfcc.txt")
-stat = stats(files)
-train_stats = stats(train)
-test_stats = stats(test)
-genre_keys = list(train_stats.keys())
-random.shuffle(genre_keys)
-for genre in genre_keys[:1]:
-	train_features, train_labels = reformat(train, genre)
-	test_features, test_labels = reformat(test, genre)
-	print(genre)
-	classify(train_features, train_labels, test_features, test_labels, genre)
-"""
-#print(stat)
+			valid_accur, test_accur, subgenre_prediction = classify(t_features, train_label, test_features, test_label, genre = subgenre, classifier = 'SVM')
+			#print(subgenre, test_accur)
+			subgenre_labels[genre][subgenre] = subgenre_prediction
+			t_features = []
+			train_label = []
+			test_label = []
+			#gc.collect()
+	train_features = []
+	train_labels = []
+	test_labels = []
+	test_features = []
+	gc.collect()
 
-#print(f.keys())
+	writeToTsv(genre_labels, subgenre_labels, keys)
+	#writeToFile(record, path = 'discogs_results_subgenres_combination.json')
+	#stat = stats(f)
+	#pickleData(files, name = 'discogs_train_test_mean_mfcc.txt')
+	"""
+			if record[genre] < test_accur:
+				for n, prediction in enumerate(test_prediction):
+					#new_prediction[n] = prediction
+					if prediction[0] > prediction[1] and subgenre_prediction[n][0] < subgenre_prediction[n][1]  and prediction[0] < subgenre_prediction[n][1]:
+						new_prediction[n] = 1
+					elif prediction[0] <= prediction[1] and subgenre_prediction[n][0] < subgenre_prediction[n][1]:
+						new_prediction[n] = 1
+	"""
+	"""
+		TP, FP, TN, FN = 0, 0, 0, 0
+		#print(genre_label[0])
+		for n, label in enumerate(genre_label):
+			#print(label, new_prediction[n])
+			if label == new_prediction[n]:
+				if label == 1:
+					TP += 1
+				else:
+					TN += 1
+			else:
+				if label == 0:
+					FP+= 1
+				else:
+					FN+= 1
+		accuracy = float(TP + TN)/ float(TP + TN + FP + FN)
+		print('Final Prediction: ', genre, accuracy)
+			#record[genre] = test_accur			
+	"""
+	"""
+	train = unpickleData(path = "discogs_train_train_mean_mfcc.txt")
+	test = unpickleData(path = "discogs_train_test_mean_mfcc.txt")
+	stat = stats(files)
+	train_stats = stats(train)
+	test_stats = stats(test)
+	genre_keys = list(train_stats.keys())
+	random.shuffle(genre_keys)
+	for genre in genre_keys[:1]:
+		train_features, train_labels = reformat(train, genre)
+		test_features, test_labels = reformat(test, genre)
+		print(genre)
+		classify(train_features, train_labels, test_features, test_labels, genre)
+	"""
+	#print(stat)
+
+	#print(f.keys())
