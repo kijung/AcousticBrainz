@@ -10,23 +10,28 @@ import random
 #files4 = parseTsv(tsv = 'acousticbrainz-mediaeval2017-lastfm-train-test.tsv')
 #print(lowlevel_features())
 #lst = lowlevel_features()
-def read(files, descriptor):
+def read(files, features, descriptor):
     for f in files.keys():
         path = './Downloads/acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
         if not os.path.isfile(path):
             continue
         with open(path) as data_file:
 			c = json.loads(data_file.read())[descriptor]
+			d = dict()
 			if descriptor == 'rhythm':
 				c.pop('beats_position')
-			files[f].inputFeatures(c)
+			if descriptor == 'lowlevel':
+				#print(c.keys())
+				for feat in features:
+					d[feat] = c[feat]
+				files[f].inputFeatures(d)
 			c = 0
         data_file = 0
 
     return files
 
-def split(files, feature, filepath):
-	f = read(files, descriptor = feature)
+def split(files, feature, filepath, features = []):
+	f = read(files, features, descriptor = feature)
 	f_data = dict()
 	for t in f.keys():
 		f_data[t] = dict()
@@ -70,11 +75,13 @@ def split_lowlevel(files, feature, filepath, part):
 #lst = ['beats_count', 'bpm', 'bpm_histogram_first_peak_bpm', 'bpm_histogram_first_peak_spread', 'bpm_histogram_first_peak_weight', 'bpm_histogram_second_peak_bpm', 'bpm_histogram_second_peak_spread', 'bpm_histogram_second_peak_weight', 'beats_loudness', 'beats_loudness_band_ratio', 'onset_rate', 'danceability']
 #accur = dict()
 files = parseTsv(tsv = 'acousticbrainz-mediaeval2017-discogs-train-train.tsv')
+features = ['mfcc', 'melbands', 'gfcc', 'spectral_contrast_coeffs', 'spectral_contrast_valleys']
+split(files, 'lowlevel', 'discogs_train_train_lowlevel1.json', features=features)
 #split(files, 'rhythm', 'discogs_train_train_rhythm.json')
 #split(files, 'tonal', 'discogs_train_train_tonal.json')
-split_lowlevel(files, 'lowlevel', 'discogs_train_train_', 1)
-split_lowlevel(files, 'lowlevel', 'discogs_train_train_', 2)
-split_lowlevel(files, 'lowlevel', 'discogs_train_train_', 3)
+#split_lowlevel(files, 'lowlevel', 'discogs_train_train_', 1)
+#split_lowlevel(files, 'lowlevel', 'discogs_train_train_', 2)
+#split_lowlevel(files, 'lowlevel', 'discogs_train_train_', 3)
 #files = 0
 #files = parseTsv(tsv = 'acousticbrainz-mediaeval2017-discogs-train-test.tsv')
 #split(files, 'rhythm', 'discogs_train_test_rhythm.json')

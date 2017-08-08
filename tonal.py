@@ -162,13 +162,15 @@ if __name__ == "__main__":
 	genres = getGenres(data).keys()
 	genres.sort()
 	#subgenres = []
+	"""
 	main_genres = dict()
 	for gen in genres:
 		if '---' in gen:
 			main_genres[gen.split('---')[0]].append(gen)
 		else:
 			main_genres[gen] = []
-
+	"""
+	genres ['rock', 'pop', 'jazz', 'electronic']
 	data = 0
 	#gc.collect()
 	data = readjson('discogs_train_test_tonal.json')
@@ -210,6 +212,7 @@ if __name__ == "__main__":
 		test_label = []
 		#gc.collect()
 		genre_labels[genre] = test_prediction
+		"""
 		subgenre_labels[genre] = dict()
 		for subgenre in main_genres[genre]:
 			subgenre_labels[genre][subgenre] = dict()
@@ -222,6 +225,7 @@ if __name__ == "__main__":
 			train_label = []
 			test_label = []
 			#gc.collect()
+		"""
 	train_features = []
 	train_labels = []
 	test_labels = []
