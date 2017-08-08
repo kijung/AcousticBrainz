@@ -1,16 +1,16 @@
+from __future__ import division
 from script import *
 import random
 
 
 
-files = parseTsv(tsv = 'acousticbrainz-mediaeval2017-discogs-train-train.tsv')
 #files2 = parseTsv(tsv = 'acousticbrainz-mediaeval2017-discogs-train-test.tsv')
 
 #files3 = parseTsv(tsv = 'acousticbrainz-mediaeval2017-lastfm-train-train.tsv')
 #files4 = parseTsv(tsv = 'acousticbrainz-mediaeval2017-lastfm-train-test.tsv')
 #print(lowlevel_features())
-lst = lowlevel_features()
-def read(files, descriptor, feature):
+#lst = lowlevel_features()
+def read(files, descriptor):
     for f in files.keys():
         path = './Downloads/acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
         if not os.path.isfile(path):
@@ -19,8 +19,6 @@ def read(files, descriptor, feature):
 			c = json.loads(data_file.read())[descriptor]
 			if descriptor == 'rhythm':
 				c.pop('beats_position')
-			if descriptor == 'lowlevel':
-				
 			files[f].inputFeatures(c)
 			c = 0
         data_file = 0
@@ -28,7 +26,7 @@ def read(files, descriptor, feature):
     return files
 
 def split(files, feature, filepath):
-	f = read(files, descriptor = feature, feature = '')
+	f = read(files, descriptor = feature)
 	f_data = dict()
 	for t in f.keys():
 		f_data[t] = dict()
@@ -38,11 +36,50 @@ def split(files, feature, filepath):
 		f[t].features = []
 	writeToFile(f_data, path = filepath)
 
-
-
+def split_lowlevel(files, feature, filepath, part):
+	keys = list(files.keys())
+	features = []
+	path = './Downloads/acousticbrainz-mediaeval-train/' + keys[0][:2] + '/' + keys[0] + '.json'
+	if not os.path.isfile(path):
+		a = 1
+	else:
+		with open(path) as data_file:
+			features = list(json.loads(data_file.read())[feature].keys())
+			length = len(features)
+			features = features[(part-1) * length//3:part * length//3]
+	for f in files.keys():
+		path = './Downloads/acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
+		if not os.path.isfile(path):
+			continue
+		with open(path) as data_file:
+			c = json.loads(data_file.read())[feature]
+			d = dict()
+			for selected_feature in features:
+				d[selected_feature] = c[selected_feature]
+			files[f].inputFeatures(d)
+			c = 0
+		data_file = 0
+	f_data = dict()
+	for t in f.keys():
+		f_data[t] = dict()
+		f_data[t]['genres'] = f[t].genres
+		f_data[t]['features'] = f[t].features
+		f[t].genres = []
+		f[t].features = []
+	writeToFile(f_data, path = filepath + 'lowlevel' + str(part) + '.json')
 #lst = ['beats_count', 'bpm', 'bpm_histogram_first_peak_bpm', 'bpm_histogram_first_peak_spread', 'bpm_histogram_first_peak_weight', 'bpm_histogram_second_peak_bpm', 'bpm_histogram_second_peak_spread', 'bpm_histogram_second_peak_weight', 'beats_loudness', 'beats_loudness_band_ratio', 'onset_rate', 'danceability']
 #accur = dict()
-split(files, 'lowlevel', 'discogs_train_train_lowlevel.json')
+files = parseTsv(tsv = 'acousticbrainz-mediaeval2017-discogs-train-train.tsv')
+#split(files, 'rhythm', 'discogs_train_train_rhythm.json')
+#split(files, 'tonal', 'discogs_train_train_tonal.json')
+split_lowlevel(files, 'lowlevel', 'discogs_train_train_', 1)
+split_lowlevel(files, 'lowlevel', 'discogs_train_train_', 2)
+split_lowlevel(files, 'lowlevel', 'discogs_train_train_', 3)
+#files = 0
+#files = parseTsv(tsv = 'acousticbrainz-mediaeval2017-discogs-train-test.tsv')
+#split(files, 'rhythm', 'discogs_train_test_rhythm.json')
+#split(files, 'tonal', 'discogs_train_test_tonal.json')
+#files = 0
 	#split(files2, feature, 'discogs_train_test_')
 	#split(files3, feature, 'lastfm_train_train_')
 	#split(files4, feature, 'lastfm_train_test_')
