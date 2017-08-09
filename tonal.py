@@ -88,9 +88,11 @@ def writeToTsv(genre_labels, subgenre_labels, keys):
 		for genre in genre_labels:
 			if genre_labels[genre][n][0] < genre_labels[genre][n][1]:
 				detail.append(genre)
+				"""
 				for subgenre in subgenre_labels[genre]:
 					if subgenre_labels[genre][subgenre][n][0] < subgenre_labels[genre][subgenre][n][1]:
 						detail.append(subgenre)
+				"""
 		combine.append(detail)
 	with open('discogs_train_test_tonal.tsv', 'w') as f:
 		for lst in combine:
@@ -170,7 +172,7 @@ if __name__ == "__main__":
 		else:
 			main_genres[gen] = []
 	"""
-	genres ['rock', 'pop', 'jazz', 'electronic']
+	genres = ['rock', 'pop', 'jazz', 'electronic']
 	data = 0
 	#gc.collect()
 	data = readjson('discogs_train_test_tonal.json')
@@ -181,8 +183,9 @@ if __name__ == "__main__":
 	#features = ['beats_count', 'bpm', 'danceability', 'beats_loudness_band_ratio'] #57
 	#features = ['bpm_histogram_first_peak_bpm', 'bpm_histogram_first_peak_spread', 'bpm_histogram_first_peak_weight', 'bpm_histogram_second_peak_bpm', 'bpm_histogram_second_peak_spread', 'bpm_histogram_second_peak_weight', 'beats_count', 'bpm', 'beats_loudness', 'danceability', 'beats_loudness_band_ratio']
 	features = dict()
-	features['tonal'] = ['tuning_frequency', 'thpcp', 'hpcp', 'key_strength', 'chords_strength', 'chords_histogram', 'chords_changes_rate', 'chords_number_rate', 'tuning_diatonic_strength', 'tuning_equal_tempered_deviation', 'tuning_nontempered_energy_ratio']
+	#features['tonal'] = ['tuning_frequency', 'thpcp', 'hpcp', 'key_strength', 'chords_strength', 'chords_histogram', 'chords_changes_rate', 'chords_number_rate', 'tuning_diatonic_strength', 'tuning_equal_tempered_deviation', 'tuning_nontempered_energy_ratio']
 	features['rhythm'] = ['bpm_histogram_first_peak_bpm', 'bpm_histogram_first_peak_spread', 'bpm_histogram_first_peak_weight', 'bpm_histogram_second_peak_bpm', 'bpm_histogram_second_peak_spread', 'bpm_histogram_second_peak_weight', 'beats_count', 'bpm', 'beats_loudness', 'danceability']
+	features['lowlevel'] = ['mfcc', 'melbands', 'gfcc', 'spectral_contrast_coeffs', 'spectral_contrast_valleys']
 	scalar = dict()
 	mode = 'train'
 	train_features, train_labels, scalar = extractFeatures(features, scalar, mode)

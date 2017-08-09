@@ -76,7 +76,10 @@ def split_lowlevel(files, feature, filepath, part):
 #accur = dict()
 files = parseTsv(tsv = 'acousticbrainz-mediaeval2017-discogs-train-train.tsv')
 features = ['mfcc', 'melbands', 'gfcc', 'spectral_contrast_coeffs', 'spectral_contrast_valleys']
-split(files, 'lowlevel', 'discogs_train_train_lowlevel1.json', features=features)
+split(files, 'lowlevel', 'discogs_train_train_lowlevel.json', features=features)
+
+files = parseTsv(tsv = 'acousticbrainz-mediaeval2017-discogs-train-test.tsv')
+split(files, 'lowlevel', 'discogs_train_test_lowlevel.json')
 #split(files, 'rhythm', 'discogs_train_train_rhythm.json')
 #split(files, 'tonal', 'discogs_train_train_tonal.json')
 #split_lowlevel(files, 'lowlevel', 'discogs_train_train_', 1)
