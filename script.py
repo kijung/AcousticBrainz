@@ -134,7 +134,7 @@ def classify(train_features, train_labels, test_features, test_labels, genre = '
     if classifier == 'SGD':
         return classifySGD(train_features, train_labels, test_features, test_labels, genre)
     elif classifier == 'RFC': #Random Forest Classifier
-        return classifySklearn(train_features, train_labels, test_features, test_labels, genre, RandomForestClassifier(n_estimators = 25))
+        return classifySklearn(train_features, train_labels, test_features, test_labels, genre, RandomForestClassifier(n_estimators = 64))
     elif classifier == 'SVM':
         return classifySklearn(train_features, train_labels, test_features, test_labels, genre, svm.SVC(probability = True))
     elif classifier == 'LR': #logistic regression

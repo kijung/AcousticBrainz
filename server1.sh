@@ -1,1 +1,1 @@
-ssh -i ~/Documents/Deep\ Learning/kijung.pem ubuntu@ec2-52-23-164-105.compute-1.amazonaws.com
+ssh -Y -i ~/Documents/Deep\ Learning/kijung.pem ubuntu@ec2-184-73-147-105.compute-1.amazonaws.com

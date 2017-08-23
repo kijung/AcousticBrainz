@@ -2,41 +2,16 @@ from __future__ import division
 from script import *
 import random
 import gc
-from sklearn.preprocessing import normalize, StandardScaler
 import pickle
-from sklearn import linear_model
-from sklearn.utils import compute_class_weight
+from sklearn.preprocessing import normalize, StandardScaler
 
-#   files = parseTsv(tsv = 'acousticbrainz-mediaeval2017-discogs-train-train.tsv')
-#files2 = parseTsv(tsv = 'acousticbrainz-mediaeval2017-discogs-train-test.tsv')
-
-
-def show_feature(feature, path = './Downloads/acousticbrainz-mediaeval-train/08/0812194a-2575-4af5-812a-c00054137c7d.json'):
-    with open(path) as data_file:
-        data = json.loads(data_file.read())
-    return data['lowlevel']['feature']
 
 def writeToFile(data, path = 'results.json'):
     with open(path, 'w') as f:
         json.dump(data, f)
-#print(lowlevel_features())
-def getGenres(files):
-    stat = dict()
-    files = processTsv(files)
-    for f in files:
-        gen = files[f]
-        for g in gen:
-            #if '---' in g:
-            #    continue
-            if g not in stat:
-                stat[g] = 1
-            else:
-                stat[g] += 1
-    genres = stat.keys()
+    #print(lowlevel_features())
 
-    return stat
-
-def getLabels(genre, train_label, train_features):
+def getLabels(genre, train_label, test_label, train_features):
     class_labels = []
     nonclass_labels = []
     test_labels = []
@@ -59,19 +34,25 @@ def getLabels(genre, train_label, train_features):
     sample_length = min(len(nonclass_features), len(class_features))
     nonclass_features = random.sample(nonclass_features, sample_length)
     features += nonclass_features
-    
+
     class_labels += [0 for n in range(sample_length)]
     features = list(zip(features, class_labels))
     random.shuffle(features)
     features, class_labels = zip(*features)
     #features = class_features + nonclass_features
+    for label in test_label:
+        if genre in label:
+            test_labels.append(1)
+        else:
+            test_labels.append(0)
 
-    return features, class_labels
+    return features, class_labels, test_labels
 
 def pad_or_truncate(some_list, target_len):
     return some_list[:target_len] + [0]*(target_len - len(some_list))
 
-def flatten(l): return flatten(l[0]) + (flatten(l[1:]) if len(l) > 1 else []) if type(l) is list else [l]
+def flatten(l): 
+    return flatten(l[0]) + (flatten(l[1:]) if len(l) > 1 else []) if type(l) is list else [l]
 
 def writeToTsv(genre_labels, subgenre_labels, keys):
     combine = []
@@ -91,6 +72,65 @@ def writeToTsv(genre_labels, subgenre_labels, keys):
         for lst in combine:
             f.writelines(('\t'.join(lst) + '\n').encode('utf-8'))
 
+def extractFeatures(features, scalar, mode, keys):
+    train_labels = dict()
+    train_features = dict()
+    #scalar = dict()
+    for category in features:
+        data = readjson('discogs_train_' + mode + '_' + category + '.json')
+
+        for key in keys:
+            if key not in train_features:
+                train_features[key] = []
+                train_labels[key] = data[key]['genres']
+                data[key]['genres'] = []
+
+        for feature in features[category]:
+            mat = []
+            sample = data[keys[0]]['features'][feature]
+            length = 0
+            if not isinstance(sample, float) and not isinstance(sample, int):
+                if isinstance(sample, dict):
+                    length = len(flatten(sample.values()))
+                else:
+                    length = len(sample)
+            for key in keys:
+                c = data[key]['features'][feature]
+                if isinstance(c, float) or isinstance(c, int):
+                    #train_features[key].append(c)
+                    mat.append([c])
+                elif isinstance(c, dict):
+                    d = flatten(c.values())
+                    if len(d) < length:
+                        mean = np.mean(np.array(d))
+                        d += [mean for n in range(length - len(d))]
+                    mat.append(d)   
+                else:
+                    #train_features[key].append(normalize(np.array(c).reshape(1, -1)[0].tolist()))
+                    #train_features[key].append(flatten(c.values()))
+                    if len(c) < length:
+                        mean = np.mean(np.array(c))
+                        c += [mean for n in range(length - len(c))]
+                    mat.append(c)
+            print(feature, np.shape(mat))
+            if feature not in scalar:
+                scalar[feature] = StandardScaler().fit(mat)
+            mat = scalar[feature].fit_transform(mat)
+            for n, key in enumerate(data.keys()):
+                train_features[key].append(list(mat[n]))
+                mat[n] = 0
+                #gc.collect()
+            mat = 0
+            #gc.collect()
+
+        data = 0
+    train = []
+    for d in keys:
+        m = train_features[d]
+    #train.append(pad_or_truncate(flatten(m), 57))
+        train.append(flatten(m))
+    train_features = train  
+    return train_features, train_labels.values(), scalar
 
 def processTsv(tsv = 'acousticbrainz-mediaeval2017-discogs-train-train.tsv'):
     #a = # of entries, b = filter
@@ -105,16 +145,14 @@ def processTsv(tsv = 'acousticbrainz-mediaeval2017-discogs-train-train.tsv'):
             files[line[0]] = line[2:]
     return files
 
-def rearrange(train_tsv, test_tsv, start, end, features):
+def rearrange(train_tsv, test_tsv, train_subset_size, test_subset_size):
     files = processTsv(train_tsv)
     lst = list(files.keys())
-    #random.shuffle(lst)
-    lst = lst[start:end]
+    random.shuffle(lst)
+    lst = lst[:train_subset_size]
     #files = 0
     train = dict()
-    length = dict()
     train_labels = []
-    f = lst[0]
 
     for f in lst:
         train_labels.append(files[f])
@@ -128,15 +166,25 @@ def rearrange(train_tsv, test_tsv, start, end, features):
             train[f]['tonal'].pop('chords_key')
             train[f]['tonal'].pop('chords_scale')
             train[f]['rhythm'].pop('beats_position')
-
+            #train[f]['rhythm'].pop('beats_loudness')
+            """
+            for descriptor in train[f].keys():
+                for d in train[f][descriptor].keys():
+                    feature = flatten(train[f][descriptor][d])
+                    if isinstance(feature, dict):
+                        feature = feature.values()
+                        length[d] = max(length[d], len(flatten(feature)))
+                    elif isinstance(feature, list):
+                        length[d] = max(length[d], len(flatten(feature)))
+                    elif isinstance(feature, float) or isinstance(feature, int):
+                         length[d] = max(length[d], [feature])
+            """
     files = 0
-    scalar = dict()
     with open('discogs_scalar.txt', 'rb') as data_file:
         scalar = pickle.load(data_file)
-
     features = list(train[lst[0]]['tonal'].keys()) + list(train[lst[0]]['rhythm'].keys()) + list(train[lst[0]]['lowlevel'].keys())
     train_features = [[] for n in range(len(lst))]
-    #indicies = ['' for n in range(3064)]
+    indicies = ['' for n in range(3064)]
     index = 0
     for feature in features:
         mat = []
@@ -159,12 +207,6 @@ def rearrange(train_tsv, test_tsv, start, end, features):
                 c += [np.mean(np.array(c)) for n in range(length - len(c))]
 
             mat.append(c)
-        """
-        for n in range(length[feature]):
-            indicies[n+index] = feature
-        """
-        #index += length[feature]
-        #scalar[feature] = StandardScaler().fit(mat)
         mat = scalar[feature].transform(mat)
         #print(np.shape(mat))
         for n, key in enumerate(mat):
@@ -172,7 +214,6 @@ def rearrange(train_tsv, test_tsv, start, end, features):
     #--------------test_features time-----------------#
     print('finished with train')
     print(np.shape(train_features))
-    """
     files = processTsv(test_tsv)
     lst = list(files.keys())
     random.shuffle(lst)
@@ -197,100 +238,79 @@ def rearrange(train_tsv, test_tsv, start, end, features):
     test_features = [[] for n in range(len(lst))]
     for feature in features:
         mat = []
+        length = len(scalar[feature].mean_)
         for key in lst:
             descriptor = 'lowlevel'
-            
             if feature in test[key]['lowlevel']:
                 descriptor = 'lowlevel'
             elif feature in test[key]['rhythm']:
                 descriptor = 'rhythm'
             else:
                 descriptor = 'tonal'
-            
             c = test[key][descriptor][feature]
             if isinstance(c, dict):
                 c = flatten(c.values())
             elif isinstance(c, float) or isinstance(c, int):
                 c = [c]
-            if len(c) < length[feature]:
-                c += [np.mean(np.array(c)) for n in range(length[feature] - len(c))]
+            if len(c) < length:
+                c += [np.mean(np.array(c)) for n in range(length - len(c))]
             mat.append(c)
         #scalar[feature] = StandardScaler().fit(mat)
         mat = scalar[feature].transform(mat)
         for n, key in enumerate(mat):
             test_features[n] += list(mat[n])
     print(np.shape(test_features))
-    return train_features, train_labels, test_features, test_labels, lst
-    """
-    return train_features, train_labels
+    return train_features, train_labels, test_features, test_labels, lst, indicies
+
 
 if __name__ == "__main__":
-    #data = readjson('discogs_train_train_rhythm.json')
-    #data = readjson('discogs_train_train_tonal.json')
-    #genres = getGenres(data).keys()
-    #genres.sort()
-    #subgenres = []
-    scalar = dict()
-    clf = dict()
-    with open('SGDClassifier.txt', 'rb') as data_file:
-        clf = pickle.load(data_file)
-
-    with open('SGDClassifier_scalar.tt') as data_file:
-        scalar = pickle.load(data_file)
-
-    
     specific = 'discogs'
     train_file = 'acousticbrainz-mediaeval2017-' + specific + '-train-train.tsv'
     test_file = 'acousticbrainz-mediaeval2017-' + specific + '-train-test.tsv'
-    genres = getGenres(train_file).keys()
-    genres.sort()
-    main_genres = dict()
-    for gen in genres:
-        if '---' in gen:
-            main_genres[gen.split('---')[0]].append(gen)
-        else:
-            main_genres[gen] = []
 
-    #genres = ['rock', 'pop', 'jazz', 'electronic']
-    data = 0
-    clf = dict()
-    for genre in main_genres.keys():
-        clf[genre] = linear_model.SGDClassifier()
-        for g in main_genres[genre]:
-            clf[g] = linear_model.SGDClassifier()
+    subset_size = 80000
+    #train_features, train_labels, test_features, test_labels, test_keys, indicies = rearrange(train_file, test_file, subset_size, 2000)
+    #test_keys, test_features, test_labels = rearrange(test_file, 1000)
 
-    #train_features, train_labels, test_features, test_labels, test_keys = rearrange(train_file, test_file, 100000, 80000, features)
-    genre_labels = dict()
-    subgenre_labels = dict()
-    train_length = len(list(processTsv(train_file).keys()))
-    subset_length = 80000
-    iterations = train_length//subset_length + 1
-    for m in range(iterations):
-        end = (m+1) * subset_length
-        start = m * subset_length
-        if end > train_length:
-            end = train_length
 
-        train_features, train_labels = rearrange(train_file, test_file, start, end, [])
+    genres = ['rock', 'electronic', 'pop', 'jazz']
+
+    #weights = [0.0 for n in range(2647)]
+    weights = dict()
+    for genre in genres:
+        weights[genre] = np.zeros(2647)
+
+    iterations = 10
+    for n in range(iterations):
+        train_features, train_labels, test_features, test_labels, test_keys, _ = rearrange(train_file, test_file, subset_size, 2000)
         for genre in genres:
-            t_features, train_label = getLabels(genre, train_labels, train_features)
-            clf[genre].partial_fit(t_features, train_label, classes=np.array([0, 1]))
-            t_features = []
-            train_label = []
+        
+            t_features, train_label, test_label = getLabels(genre, train_labels, test_labels, train_features)
+            valid_accur, test_accur, test_prediction, importance = classify(t_features, train_label, test_features, test_label, genre = genre, classifier = 'RFC')
+            #print(test_accur)
+            #print(importance)
+            weights[genre] += (np.array(importance))
+            t_features, train_label, test_label = 0, 0, 0
+            test_prediction = 0
             gc.collect()
-        #print(genre, test_accur)
-
-        train_features = []
-        train_labels = []
-        t_features = []
-        train_label = []
+        train_features, train_labels, test_features, test_labels, test_keys = 0, 0, 0, 0, 0
         gc.collect()
+    
 
-    with open('discogs_SGD_Classifiers.txt', 'wb') as data_file:
-        pickle.dump(clf, data_file)
+    for genre in genres:
+        w = weights[genre]
+        w /= iterations
+        a = zip(list(w), [n for n in range(2647)])
+        a.sort(key = lambda tup:tup[0], reverse=True)
+        weights[genre] = a
 
-    with open('discogs_genre.txt', 'wb') as data_file:
-        pickle.dump(main_genres)
-    #writeToTsv(genre_labels, subgenre_labels, keys)
+    with open('weights.txt', 'w') as data_file:
+        pickle.dump(weights, data_file)
 
-    #print(f.keys())
+    """
+    a = zip(weights, [n for n in range(2647)])
+    a.sort(key = lambda tup:tup[0])
+    print(a)
+    b = zip(*a)[1]
+    print(indicies[b[0]], b[0])
+    """
