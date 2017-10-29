@@ -2,7 +2,7 @@ import os
 import sys
 import re
 import os.path
-import ujson as json
+import json
 import tensorflow as tf
 import numpy as np
 import pickle
