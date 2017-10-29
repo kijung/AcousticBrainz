@@ -136,7 +136,7 @@ def classify(train_features, train_labels, test_features, test_labels, genre = '
     elif classifier == 'RFC': #Random Forest Classifier
         return classifySklearn(train_features, train_labels, test_features, test_labels, genre, RandomForestClassifier(n_estimators = 64))
     elif classifier == 'SVM':
-        return classifySklearn(train_features, train_labels, test_features, test_labels, genre, svm.SVC(probability = True))
+        return classifySklearn(train_features, train_labels, test_features, test_labels, genre, svm.SVC(C=10.0))
     elif classifier == 'LR': #logistic regression
         return classifySklearn(train_features, train_labels, test_features, test_labels, genre, linear_model.LogisticRegression(C=1e5))
     elif classifier == 'kNR': #k nearest neighbors
@@ -144,3 +144,58 @@ def classify(train_features, train_labels, test_features, test_labels, genre = '
     else:
         return classifySklearn(train_features, train_labels, test_features, test_labels, genre, AdaBoostClassifier())
 
+def extract(string, data):
+    """Extracts and reformats the data
+    """
+    #print(1)
+    lst = string.split('_')
+    category = lst[0]
+    #stats = ["mean", "var", "median", "min", "max", "dmean", "dmean2", "dvar", "dvar2"]
+    stats = ["mean", "var", "dmean", "dmean2", "dvar", "dvar2"]
+    #print(lst)
+    if lst[-2] in stats:
+        return data[category]['_'.join(lst[1:-2])][lst[-2]][int(lst[-1])]
+    elif lst[-1] in stats:
+        #print(lst[-1])
+        return data[category]['_'.join(lst[1:-1])][lst[-1]]
+    elif lst[-1].isdigit():
+        return data[category]['_'.join(lst[1:-1])][int(lst[-1])]
+    else:
+        return data[category]['_'.join(lst[1:])]
+
+def sample_json():
+    with open('sample.json') as data_file:
+        data = json.loads(data_file.read())
+    return data
+
+def getFeature(data):
+    lines = [line.rstrip('\n') for line in open('features.txt')]
+    length = 0
+    scale = dict()
+    sc = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"]
+    count = 1
+    for s in sc:
+        scale[s] = count
+        count += 1
+    #m = ['major', 'minor']
+    chord = dict()
+    chord['major'] = 0
+    chord['minor'] = 1
+    feature_vector = []
+    for feature in lines:
+        d = extract(feature, data)
+        if isinstance(d, list):
+            length += len(d)
+            feature_vector += d
+        else:
+            length += 1
+            if feature == 'tonal_key_key':
+                print(d)
+                print(scale[d])
+                feature_vector += [scale[d]]
+            elif feature == 'tonal_key_scale':
+                print(chord[d])
+                feature_vector += [chord[d]]
+            else:
+                feature_vector += [d]
+    return feature_vector

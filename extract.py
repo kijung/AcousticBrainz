@@ -4,7 +4,7 @@ import random
 import gc
 from sklearn.preprocessing import normalize, StandardScaler
 import pickle
-
+import path
 def writeToFile(data, path = 'results.json'):
     with open(path, 'w') as f:
         json.dump(data, f)
@@ -193,15 +193,15 @@ def saveFeatures(specific,train_tsv, start, end, scalar):
             #train[f]['rhythm'].pop('beats_loudness')
 if __name__ == "__main__":
     specific = 'discogs'
-    train_file = 'acousticbrainz-mediaeval2017-' + specific + '-train-train.tsv'
-    test_file = 'acousticbrainz-mediaeval2017-' + specific + '-train-test.tsv'
+    train_file = path.path + 'acousticbrainz-mediaeval2017-' + specific + '-train-train.tsv'
+    test_file = path.path + 'acousticbrainz-mediaeval2017-' + specific + '-train-test.tsv'
 
     files = processTsv(train_file)
     train_length = len(files)
     train = dict()
     lst = list(files.keys())
     f = lst[0]
-    path = './Downloads/acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
+    path = path.path + f[:2] + '/' + f + '.json'
 
     with open(path) as data_file:
         train[f] = json.loads(data_file.read())
