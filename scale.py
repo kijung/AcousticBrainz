@@ -86,11 +86,7 @@ def processTsv(tsv = 'acousticbrainz-mediaeval2017-discogs-train-train.tsv'):
     return files
 
 
-def saveFeatures(n, specific):
-    path = constants.path + specific + '_scalar.txt'
-    with open(path, 'rb') as data_file:
-        scalar = pickle.load(data_file)
-
+def saveFeatures(n, specific, scalar):
     path = constants.path + specific + str(n) + '_train.pkl'
     with open(path, 'rb') as data_file:
         data = pickle.load(data_file)
@@ -119,7 +115,11 @@ if __name__ == "__main__":
     specific = args.input_file
     train_file = constants.path + 'acousticbrainz-mediaeval2017-' + specific + '-train-train.tsv'
     test_file = constants.path + 'acousticbrainz-mediaeval2017-' + specific + '-train-test.tsv'
+    path = constants.path + specific + '_scalar.txt'
+    with open(path, 'rb') as data_file:
+        scalar = pickle.load(data_file)
 
     for n in range(5):
-    	scaleFeatures(n, specific)
+
+    	scaleFeatures(n, specific, scalar)
 
