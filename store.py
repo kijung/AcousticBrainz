@@ -94,11 +94,14 @@ def saveFeatures(train_files, test_files, specific, scalar, part):
     for f in train_files[start:end]:
         path = constants.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
         song = readjson(path)
-        train += [getFeature(song)]
+        train.append(getFeature(song))
     print('Finished train ' + part)
     print(train[0])
     print(np.shape(train))
-    train = scalar.partial_fit(train)
+    if scalar.n_samples_seen == 0:
+        scalar.fit(train)
+    else:
+        scalar.partial_fit(train)
     with open(constants.path + specific + part + '_' + 'train.pkl', 'wb') as data_file:
         pickle.dump(train, data_file)
     train = 0
