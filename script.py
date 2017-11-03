@@ -2,8 +2,8 @@ import os
 import sys
 import re
 import os.path
-import json
-import tensorflow as tf
+import ujson as json
+#import tensorflow as tf
 import numpy as np
 import pickle
 import random
@@ -170,6 +170,8 @@ def sample_json():
 
 def getFeature(data):
     lines = [line.rstrip('\n') for line in open('features.txt')]
+    lines.remove('tonal_key_key')
+    lines.remove('tonal_key_scale')
     length = 0
     scale = dict()
     sc = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"]
@@ -184,18 +186,21 @@ def getFeature(data):
     feature_vector = []
     for feature in lines:
         d = extract(feature, data)
+        #feat = feature.encode('utf-8')
         if isinstance(d, list):
             length += len(d)
             feature_vector += d
         else:
             length += 1
             if feature == 'tonal_key_key':
-                print(d)
-                print(scale[d])
+                #print(d)
+                #print(scale[d])
+                #print(scale[d])
                 feature_vector += [scale[d]]
             elif feature == 'tonal_key_scale':
-                print(chord[d])
+                #print(chord[d])
                 feature_vector += [chord[d]]
             else:
-                feature_vector += [d]
+                if isinstance(d, int) or isinstance(d, float):
+                    feature_vector += [d]
     return feature_vector

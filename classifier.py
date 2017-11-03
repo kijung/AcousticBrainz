@@ -6,7 +6,7 @@ import json
 from sklearn import svm, linear_model
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
-import tensorflow as tf
+#import tensorflow as tf
 import numpy as np
 import pickle
 import random

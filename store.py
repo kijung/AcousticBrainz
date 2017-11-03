@@ -86,25 +86,41 @@ def processTsv(tsv = 'acousticbrainz-mediaeval2017-discogs-train-train.tsv'):
     return files
 
 
-def saveFeatures(train_files, test_files, specific):
+def saveFeatures(train_files, test_files, specific, scalar, part):
     train = []
-    for f in train_files:
-        path = path.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
+    test = []
+    start = int(part) * len(train_files)//5
+    end = (int(part) + 1) * len(train_files)//5
+    for f in train_files[start:end]:
+        path = constants.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
         song = readjson(path)
-        train += [getFeatures(song)]
-    for f in test_files:
-        path = path.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
-        song = readjson(path)
-        test += [getFeatures(song)]
-    scalar = StandardScalar()
-    train = scalar.fit_transform(train)
-    test = scalar.transform(test)
-    with open(path.path + specific + '_' + 'train.pkl', 'wb') as data_file:
+        train += [getFeature(song)]
+    print('Finished train ' + part)
+    print(train[0])
+    print(np.shape(train))
+    train = scalar.partial_fit(train)
+    with open(constants.path + specific + part + '_' + 'train.pkl', 'wb') as data_file:
         pickle.dump(train, data_file)
-
-    with open(path.path + specific + '_' + 'test.pkl', 'wb') as data_file:
+    train = 0
+    gc.collect()
+    """
+    #print(train[0])
+    for f in test_files:
+        path = constants.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
+        song = readjson(path)
+        test += [getFeature(song)]
+    #print('Finished Test')
+    with open(constants.path + specific + part + '_' + 'test.pkl', 'wb') as data_file:
         pickle.dump(test, data_file)
 
+    #scalar = StandardScaler()
+    #train = scalar.fit_transform(train)
+    test = scalar.transform(test)
+    with open(constants.path + specific + part + '_' + 'test.pkl', 'wb') as data_file:
+        pickle.dump(test, data_file)
+    test = 0
+    gc.collect()
+    """
     return scalar
     #train[f]['rhythm'].pop('beats_loudness')
 if __name__ == "__main__":
@@ -117,15 +133,19 @@ if __name__ == "__main__":
     #parser.add_argument('-o', '--output_file', required=True, help='The predicted classes will be written into this file, which then should be able to be evaluated with the R script provided by the challenge.')
     #parser.add_argument('-j', '--jobs', default=4, help='Number of parallel Jobs')
     args = parser.parse_args()
-    specific = args['input_file']
-    train_file = path.path + 'acousticbrainz-mediaeval2017-' + specific + '-train-train.tsv'
-    test_file = path.path + 'acousticbrainz-mediaeval2017-' + specific + '-train-test.tsv'
+    #print(args)
+    specific = args.input_file
+    train_file = constants.path + 'acousticbrainz-mediaeval2017-' + specific + '-train-train.tsv'
+    test_file = constants.path + 'acousticbrainz-mediaeval2017-' + specific + '-train-test.tsv'
 
     train_files = processTsv(train_file)
     test_files = processTsv(test_file)
-    #scalar = StandardScaler()
-    scalar = saveFeatures(train_files, test_files, specific)
+    train_files = list(train_files.keys())
+    test_files = list(test_files.keys())
+    scalar = StandardScaler()
+    for n in range(5):
+    	scalar = saveFeatures(train_files, test_files, specific, scalar, str(n))
 
 
-    with open(path.path + specific + '_scalar.txt', 'wb') as data_file:
-        pickle.dump(scalar)
+    with open(constants.path + specific + '_scalar.txt', 'wb') as data_file:
+        pickle.dump(scalar, data_file)
