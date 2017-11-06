@@ -120,6 +120,23 @@ def saveFeatures(train_files, test_files, specific, scalar, part):
     data = 0
     used = 0
     gc.collect()
+
+def train(classifier):
+    xtrain = []
+    ytrain = []
+    for n in range(5):
+        with open(constants.path + specific + str(n) + '_' + 'train.pkl', 'wb') as data_file:
+            temp = pickle.load(data_file)
+        xtrain += temp['features']
+        ytrain += temp['genres']
+        temp = 0
+        gc.collect()
+
+    classifier.fit(xtrain, ytrain)
+
+    with open(constants.path + specific + '_classifier.pkl', 'wb') as data_file:
+        pickle.dump(classifier, data_file)
+    #return classifier
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="This script implements task 1 of the MediaEval 2017 challenge.")
     parser.add_argument('-i', '--input_file', required=True)
@@ -143,4 +160,7 @@ if __name__ == "__main__":
         scalar = pickle.load(data_file)
     for n in range(5):
     	saveFeatures(train_files, test_files, specific, scalar, str(n))
+
+    classifier = MultiOutputClassifier(LinearSVC(C=10, class_weight='balanced', dual=True))
+    train(classifier)
 
