@@ -153,7 +153,7 @@ if __name__ == "__main__":
     test_file = constants.path + 'acousticbrainz-mediaeval2017-' + specific + '-train-test.tsv'
 
     train_files = processTsv(train_file)
-    #test_files = processTsv(test_file)
+    test_files = processTsv(test_file)
     #train_files = list(train_files.keys())
     #test_files = list(test_files.keys())
     with open(constants.path + specific + '_scalar.txt', 'rb') as data_file:
