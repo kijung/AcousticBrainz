@@ -181,6 +181,21 @@ def train(classifier):
 
     with open(constants.path + specific + '_classifier.pkl', 'wb') as data_file:
         pickle.dump(classifier, data_file)
+
+def predict(classifier, part):
+    with open(constants.path + specific + part + '_' + 'test.pkl', 'wb') as data_file:
+        data = pickle.load(data, data_file)
+    xtest = data['features']
+    data = 0
+    gc.collect()
+
+    path = constants.path + specific + '_mlb.pkl'
+    with open(path, 'rb') as data_file:
+        mlb = pickle.load(data_file)
+
+    ytest = mlb.inverse_transform(classifier.predict(xtest))
+    return ytest
+
     #return classifier
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="This script implements task 1 of the MediaEval 2017 challenge.")
@@ -210,3 +225,16 @@ if __name__ == "__main__":
     print('Entering Train')
     train(classifier)
     """
+    with open(constants.path + specific + '_classifier.pkl', 'rb') as data_file:
+        classifier = pickle.load(data_file)
+    test_labels = []
+    for n in range(5):
+        ytest = predict(classifier, str(n))
+        for m in ytest:
+            test_labels.append(m)
+        ytest = 0
+        gc.collect()
+
+    with open(constants.path + specific + '_predictions.pkl', 'rb') as data_file:
+        pickle.dump(test_labels,data_file)  
+    print(test_labels[0])
