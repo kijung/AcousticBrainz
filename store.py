@@ -88,7 +88,7 @@ def processTsv(tsv = 'acousticbrainz-mediaeval2017-discogs-train-train.tsv'):
     return files
 
 
-def saveFeatures(train_files, test_files, specific, scalar, part):
+def saveFeaturesTrain(train_files, test_files, specific, scalar, part):
     train = []
     test = []
     keys = list(train_files.keys())
@@ -119,6 +119,40 @@ def saveFeatures(train_files, test_files, specific, scalar, part):
     with open(constants.path + specific + part + '_' + 'train.pkl', 'wb') as data_file:
         pickle.dump(data, data_file)
     train = 0
+    data = 0
+    used = 0
+    gc.collect()
+    
+def saveFeaturesTest(train_files, test_files, specific, scalar, part):
+    test = []
+    keys = list(test_files.keys())
+    start = int(part) * len(keys)//5
+    end = (int(part) + 1) * len(keys)//5
+    count = 0
+    used = []
+
+    for f in keys[start:end]:
+        path = constants.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
+        song = readjson(path)
+        feat = getFeature(song)
+        if len(feat) == 390:
+             continue
+        test.append(feat)
+        used.append(test_files[f])
+    print('Finished test ' + part)
+    print(np.shape(test))
+
+    path = constants.path + specific + '_mlb.pkl'
+    with open(path, 'rb') as data_file:
+        mlb = pickle.load(data_file)
+
+    used = mlb.transform(used)
+    data = dict()
+    data['features'] = test
+    data['genres'] = used
+    with open(constants.path + specific + part + '_' + 'test.pkl', 'wb') as data_file:
+        pickle.dump(data, data_file)
+    test = 0
     data = 0
     used = 0
     gc.collect()
@@ -163,17 +197,16 @@ if __name__ == "__main__":
     train_file = constants.path + 'acousticbrainz-mediaeval2017-' + specific + '-train-train.tsv'
     test_file = constants.path + 'acousticbrainz-mediaeval2017-' + specific + '-train-test.tsv'
 
-    #train_files = processTsv(train_file)
-    #test_files = processTsv(test_file)
-    #train_files = list(train_files.keys())
-    #test_files = list(test_files.keys())
+    train_files = processTsv(train_file)
+    test_files = processTsv(test_file)
     
-    #with open(constants.path + specific + '_scalar.txt', 'rb') as data_file:
-    #    scalar = pickle.load(data_file)
-    #for n in range(5):
-    	#saveFeatures(train_files, test_files, specific, scalar, str(n))
+    with open(constants.path + specific + '_scalar.txt', 'rb') as data_file:
+        scalar = pickle.load(data_file)
+    for n in range(5):
+    	saveFeaturesTest(train_files, test_files, specific, scalar, str(n))
+    """
     print('Initialize Classifier')
     classifier = MultiOutputClassifier(LinearSVC(C=10, class_weight='balanced', dual=True), n_jobs = 4)
     print('Entering Train')
     train(classifier)
-
+    """
