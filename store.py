@@ -4,7 +4,9 @@ import argparse
 import random
 import gc
 from sklearn.preprocessing import normalize, StandardScaler, MultiLabelBinarizer
-import pickle
+from sklearn.svm import LinearSVC
+from sklearn.multioutput import MultiOutputClassifier
+import cPickle as pickle
 import constants
 def writeToFile(data, path = 'results.json'):
     with open(path, 'w') as f:
@@ -124,14 +126,23 @@ def saveFeatures(train_files, test_files, specific, scalar, part):
 def train(classifier):
     xtrain = []
     ytrain = []
+    print('Entering Classification')
     for n in range(5):
-        with open(constants.path + specific + str(n) + '_' + 'train.pkl', 'wb') as data_file:
+        print('Part ' + str(n))
+        with open(constants.path + specific + str(n) + '_' + 'train.pkl', 'rb') as data_file:
             temp = pickle.load(data_file)
+        print(np.shape(temp['features']), np.shape(temp['genres']))
         xtrain += temp['features']
-        ytrain += temp['genres']
+        for m in temp['genres']:
+            ytrain.append(m)
         temp = 0
         gc.collect()
-
+    print(np.shape(xtrain), np.shape(ytrain))
+    print(ytrain[0])   
+    print("Let's train")
+    #xtrain = xtrain[:10000]
+    #ytrain = ytrain[:10000]
+    gc.collect()
     classifier.fit(xtrain, ytrain)
 
     with open(constants.path + specific + '_classifier.pkl', 'wb') as data_file:
@@ -152,15 +163,17 @@ if __name__ == "__main__":
     train_file = constants.path + 'acousticbrainz-mediaeval2017-' + specific + '-train-train.tsv'
     test_file = constants.path + 'acousticbrainz-mediaeval2017-' + specific + '-train-test.tsv'
 
-    train_files = processTsv(train_file)
-    test_files = processTsv(test_file)
+    #train_files = processTsv(train_file)
+    #test_files = processTsv(test_file)
     #train_files = list(train_files.keys())
     #test_files = list(test_files.keys())
-    with open(constants.path + specific + '_scalar.txt', 'rb') as data_file:
-        scalar = pickle.load(data_file)
-    for n in range(5):
-    	saveFeatures(train_files, test_files, specific, scalar, str(n))
-
-    classifier = MultiOutputClassifier(LinearSVC(C=10, class_weight='balanced', dual=True))
+    
+    #with open(constants.path + specific + '_scalar.txt', 'rb') as data_file:
+    #    scalar = pickle.load(data_file)
+    #for n in range(5):
+    	#saveFeatures(train_files, test_files, specific, scalar, str(n))
+    print('Initialize Classifier')
+    classifier = MultiOutputClassifier(LinearSVC(C=10, class_weight='balanced', dual=True), n_jobs = 4)
+    print('Entering Train')
     train(classifier)
 
