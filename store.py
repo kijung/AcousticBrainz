@@ -130,13 +130,14 @@ def saveFeaturesTest(train_files, test_files, specific, scalar, part):
     end = (int(part) + 1) * len(keys)//5
     count = 0
     used = []
-
+    mean = scalar.mean_
     for f in keys[start:end]:
         path = constants.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
         song = readjson(path)
         feat = getFeature(song)
-        if len(feat) == 390:
-             continue
+        if len(feat) < 391:
+            dif = 391-len(feat)
+            feat += mean[len(feat):391]
         test.append(feat)
         used.append(test_files[f])
     print('Finished test ' + part)
@@ -146,6 +147,7 @@ def saveFeaturesTest(train_files, test_files, specific, scalar, part):
     with open(path, 'rb') as data_file:
         mlb = pickle.load(data_file)
 
+    test = scalar.transform(test)
     used = mlb.transform(used)
     data = dict()
     data['features'] = test
