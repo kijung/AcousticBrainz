@@ -136,8 +136,9 @@ def saveFeaturesTest(train_files, test_files, specific, scalar, part):
         song = readjson(path)
         feat = getFeature(song)
         if len(feat) < 391:
-            dif = 391-len(feat)
+            #dif = 391-len(feat)
             feat += mean[len(feat):391]
+            print(len(feat))
         test.append(feat)
         used.append(test_files[f])
     print('Finished test ' + part)
