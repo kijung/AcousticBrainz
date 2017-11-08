@@ -21,6 +21,9 @@ if(!file.exists(arg.run))
 
 # header: whether file has header or not
 # releaseID: whether file has releaseID column (2nd) or not
+paste0 <- function(..., collapse = NULL) {
+    paste(..., sep = "", collapse = collapse)
+}
 readAndSort <- function(file, header = FALSE, releaseID = FALSE) {
   lines <- readLines(file)
   if(header)
