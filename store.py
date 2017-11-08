@@ -8,71 +8,70 @@ from sklearn.svm import LinearSVC
 from sklearn.multioutput import MultiOutputClassifier
 import cPickle as pickle
 import constants
-def writeToFile(data, path = 'results.json'):
-    with open(path, 'w') as f:
-        json.dump(data, f)
-    #print(lowlevel_features())
+def dump(data, path):
+    with open(path, 'wb') as data_file:
+        pickle.dump(data, data_file)
 
-def getLabels(genre, train_label, test_label, train_features):
-    class_labels = []
-    nonclass_labels = []
-    test_labels = []
-    class_features = []
-    nonclass_features = []
-    for n, label in enumerate(train_label):
-        if genre in label:
-            class_labels.append(1)
-            class_features.append(train_features[n])
-        else:
-            nonclass_labels.append(0)
-            nonclass_features.append(train_features[n])
+def load(path):
+    with open(path, 'rb') as data_file:
+        return pickle.load(data_file)
 
-    features = class_features
-    sample_length = 0
-    if len(class_labels) < 0.3 * len(nonclass_labels):
-        sample_length = 2 * len(class_labels)
-    else:
-        sample_length = len(nonclass_labels)
-    sample_length = min(len(nonclass_features), len(class_features))
-    nonclass_features = random.sample(nonclass_features, sample_length)
-    features += nonclass_features
+def setup(train_files, test_files, specific):
+    scalar = StandardScaler()
+    mlb = MultiLabelBinarizer()
+    train_labels = []
+    train_data = []
+    train_keys = []
+    for f in train_files.keys():
+        path = constants.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
+        song = readjson(path)
+        feat = getFeature(song)
+        if len(feat) != 391:
+             continue
+        train_keys.append(f)
+        train_data.append(feat)
+        train_labels.append(train_files[f]) 
+    train_labels = mlb.fit_transform(train_labels)
+    train_data = scalar.fit_transform(train_data)
+    path = constants.path + specific + '_mlb.pkl'
+    dump(mlb, path)
 
-    class_labels += [0 for n in range(sample_length)]
-    features = list(zip(features, class_labels))
-    random.shuffle(features)
-    features, class_labels = zip(*features)
-    #features = class_features + nonclass_features
-    for label in test_label:
-        if genre in label:
-            test_labels.append(1)
-        else:
-            test_labels.append(0)
+    path = constants.path + specific + '_scalar.pkl'
+    dump(scalar, path)
 
-    return features, class_labels, test_labels
 
-def pad_or_truncate(some_list, target_len):
-    return some_list[:target_len] + [0]*(target_len - len(some_list))
+    path = constants.path + specific + '_train.pkl'
+    data = dict()
+    data['features'] = train_data
+    data['labels'] = train_labels
+    data['keys'] = train_keys
+    dump(data, path)
 
-def flatten(l): 
-    return flatten(l[0]) + (flatten(l[1:]) if len(l) > 1 else []) if type(l) is list else [l]
+    classifier = MultiOutputClassifier(LinearSVC(C=10, class_weight='balanced', dual=True), n_jobs = 4)
+    classifier.fit(train_data, train_labels)
 
-def writeToTsv(genre_labels, subgenre_labels, keys):
-    combine = []
-    for n, key in enumerate(keys):
-        detail = []
-        detail.append(key)
-        for genre in genre_labels:
-            if genre_labels[genre][n] == 1:
-                detail.append(genre)
-                """
-                for subgenre in subgenre_labels[genre]:
-                    if subgenre_labels[genre][subgenre][n][0] < subgenre_labels[genre][subgenre][n][1]:
-                        detail.append(subgenre)
-                """
-        combine.append(detail)
-    with open('discogs_train_test_tonal.tsv', 'w') as f:
-        for lst in combine:
-            f.writelines(('\t'.join(lst) + '\n').encode('utf-8'))
+    data = 0
+    train_data = 0
+    train_labels = 0
+    train_keys = 0
+    gc.collect()
+
+    #test_labels = []
+    test_data = []
+    test_keys = list(test_files.keys())
+    mean = scalar.mean_
+    for f in test_keys:
+        path = constants.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
+        song = readjson(path)
+        feat = getFeature(song)   
+        if len(feat) < 391:
+            for m in mean[length:]:
+                feat += [m]             
+        test_data.append(feat)
+    test_data = scalar.transform(test_data)
+    predictions = classifier.predict(test_data)
+    genre_predictions = mlb.inverse_transform(predictions)
+    write(genre_predictions, test_keys, specific)
 
 def write(labels, keys, specific):
     with open(constants.path + specific + '_train_test.tsv', 'wb') as f:
@@ -89,7 +88,11 @@ def processTsv(tsv = 'acousticbrainz-mediaeval2017-discogs-train-train.tsv'):
             while '' in line:
                 line.remove('')
             #audio = Audio(line[0], line[1], line[2:])
-            files[line[0]] = set(line[2:])
+            labels = []
+            for m in line[2:]:
+                if '---' not in m:
+                    labels.append(m)
+            files[line[0]] = set(labels)
     return files
 
 
@@ -227,11 +230,14 @@ if __name__ == "__main__":
 
     train_files = processTsv(train_file)
     test_files = processTsv(test_file)
+    setup(train_files, test_files, specific)
     """
-    with open(constants.path + specific + '_scalar.txt', 'rb') as data_file:
+    with open(constants.path + specific + '_scalar.pkl', 'rb') as data_file:
         scalar = pickle.load(data_file)
     for n in range(5):
-    	saveFeaturesTest(train_files, test_files, specific, scalar, str(n))
+    	saveFeaturesTrain(train_files, test_files, specific, scalar, str(n))
+    for n in range(5):
+        saveFeaturesTest(train_files, test_files, specific, scalar, str(n))
     
     print('Initialize Classifier')
     classifier = MultiOutputClassifier(LinearSVC(C=10, class_weight='balanced', dual=True), n_jobs = 4)
@@ -251,7 +257,8 @@ if __name__ == "__main__":
     with open(constants.path + specific + '_predictions.pkl', 'wb') as data_file:
         pickle.dump(test_labels,data_file)  
     print(test_labels[0])
-    """
+    
     with open(constants.path + specific + '_predictions.pkl', 'rb') as data_file:
         test_labels = pickle.load(data_file)
     write(test_labels, list(test_files.keys()), specific)
+    """
