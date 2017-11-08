@@ -74,6 +74,11 @@ def writeToTsv(genre_labels, subgenre_labels, keys):
         for lst in combine:
             f.writelines(('\t'.join(lst) + '\n').encode('utf-8'))
 
+def write(labels, keys, specific):
+    with open(constants.path + specific + '_train_test.tsv', 'wb') as f:
+        for n, key in enumerate(keys):
+            f.writelines(('\t'.join([key] + list(labels[n])) + '\n').encode('utf-8'))
+
 def processTsv(tsv = 'acousticbrainz-mediaeval2017-discogs-train-train.tsv'):
     #a = # of entries, b = filter
     files = dict()
@@ -131,14 +136,19 @@ def saveFeaturesTest(train_files, test_files, specific, scalar, part):
     count = 0
     used = []
     mean = scalar.mean_
+    print(len(mean))
     for f in keys[start:end]:
         path = constants.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
         song = readjson(path)
         feat = getFeature(song)
         if len(feat) < 391:
             #dif = 391-len(feat)
-            feat += mean[len(feat):391]
-            print(len(feat))
+            length = len(feat)
+            print('Before :', len(feat))
+            for m in mean[length:]:
+                feat += [m]
+            #print(mean[length:])
+            print('After :', len(feat))
         test.append(feat)
         used.append(test_files[f])
     print('Finished test ' + part)
@@ -186,8 +196,8 @@ def train(classifier):
         pickle.dump(classifier, data_file)
 
 def predict(classifier, part):
-    with open(constants.path + specific + part + '_' + 'test.pkl', 'wb') as data_file:
-        data = pickle.load(data, data_file)
+    with open(constants.path + specific + part + '_' + 'test.pkl', 'rb') as data_file:
+        data = pickle.load(data_file)
     xtest = data['features']
     data = 0
     gc.collect()
@@ -217,17 +227,17 @@ if __name__ == "__main__":
 
     train_files = processTsv(train_file)
     test_files = processTsv(test_file)
-    
+    """
     with open(constants.path + specific + '_scalar.txt', 'rb') as data_file:
         scalar = pickle.load(data_file)
     for n in range(5):
     	saveFeaturesTest(train_files, test_files, specific, scalar, str(n))
-    """
+    
     print('Initialize Classifier')
     classifier = MultiOutputClassifier(LinearSVC(C=10, class_weight='balanced', dual=True), n_jobs = 4)
     print('Entering Train')
     train(classifier)
-    """
+    
     with open(constants.path + specific + '_classifier.pkl', 'rb') as data_file:
         classifier = pickle.load(data_file)
     test_labels = []
@@ -237,7 +247,11 @@ if __name__ == "__main__":
             test_labels.append(m)
         ytest = 0
         gc.collect()
-
-    with open(constants.path + specific + '_predictions.pkl', 'rb') as data_file:
+    
+    with open(constants.path + specific + '_predictions.pkl', 'wb') as data_file:
         pickle.dump(test_labels,data_file)  
     print(test_labels[0])
+    """
+    with open(constants.path + specific + '_predictions.pkl', 'rb') as data_file:
+        test_labels = pickle.load(data_file)
+    write(test_labels, list(test_files.keys()), specific)
