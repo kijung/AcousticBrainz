@@ -31,8 +31,10 @@ def setup(train_files, test_files, specific):
         train_keys.append(f)
         train_data.append(feat)
         train_labels.append(train_files[f]) 
+    print('finished train')
     train_labels = mlb.fit_transform(train_labels)
     train_data = scalar.fit_transform(train_data)
+    print('finished transforming')
     path = constants.path + specific + '_mlb.pkl'
     dump(mlb, path)
 
@@ -47,9 +49,10 @@ def setup(train_files, test_files, specific):
     data['keys'] = train_keys
     dump(data, path)
 
+    print('finished dumping')
     classifier = MultiOutputClassifier(LinearSVC(C=10, class_weight='balanced', dual=True), n_jobs = 4)
     classifier.fit(train_data, train_labels)
-
+    print('finished fitting')
     data = 0
     train_data = 0
     train_labels = 0
@@ -70,8 +73,10 @@ def setup(train_files, test_files, specific):
         test_data.append(feat)
     test_data = scalar.transform(test_data)
     predictions = classifier.predict(test_data)
+    print('finished predictions')
     genre_predictions = mlb.inverse_transform(predictions)
     write(genre_predictions, test_keys, specific)
+    print('finished writing predictions')
 
 def write(labels, keys, specific):
     with open(constants.path + specific + '_train_test.tsv', 'wb') as f:
