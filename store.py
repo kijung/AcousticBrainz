@@ -70,6 +70,7 @@ def setup(train_files, test_files, specific):
         song = readjson(path)
         feat = getFeature(song)   
         if len(feat) < 391:
+            length = len(feat)
             for m in mean[length:]:
                 feat += [m]             
         test_data.append(feat)
