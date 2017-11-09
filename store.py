@@ -6,6 +6,7 @@ import gc
 from sklearn.preprocessing import normalize, StandardScaler, MultiLabelBinarizer
 from sklearn.svm import LinearSVC
 from sklearn.multioutput import MultiOutputClassifier
+from sklearn.ensemble import RandomForestClassifier
 import cPickle as pickle
 import constants
 def dump(data, path):
@@ -50,7 +51,8 @@ def setup(train_files, test_files, specific):
     dump(data, path)
 
     print('finished dumping')
-    classifier = MultiOutputClassifier(LinearSVC(C=10, class_weight='balanced', dual=True), n_jobs = 4)
+    #classifier = MultiOutputClassifier(LinearSVC(C=10, class_weight='balanced', dual=True), n_jobs = 4)
+    classifier = MultiOutputClassifier(RandomForestClassifier(n_estimators=20, class_weight = 'balanced'), n_jobs=4)
     classifier.fit(train_data, train_labels)
     print('finished fitting')
     data = 0
