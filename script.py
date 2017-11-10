@@ -36,6 +36,9 @@ def readjson(path):
         data = json.load(data_file)
     return data
 
+def flatten(l): 
+    return flatten(l[0]) + (flatten(l[1:]) if len(l) > 1 else []) if type(l) is list else [l]
+    
 def lowlevel_features(path = './Downloads/acousticbrainz-mediaeval-train/08/0812194a-2575-4af5-812a-c00054137c7d.json'):
     with open(path) as data_file:
         data = json.loads(data_file.read())
