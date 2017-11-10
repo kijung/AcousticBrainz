@@ -81,6 +81,72 @@ def setup(train_files, test_files, specific):
     write(genre_predictions, test_keys, specific)
     print('finished writing predictions')
 
+def mycode(train_files, test_files, specific):
+    scalar = StandardScaler()
+    mlb = MultiLabelBinarizer()
+    train_labels = []
+    train_data = []
+    train_keys = []
+    for f in train_files.keys():
+        path = constants.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
+        song = readjson(path)
+        feat = getAllFeatures(song)
+        if len(feat) != 2647:
+             continue
+        train_keys.append(f)
+        train_data.append(feat)
+        train_labels.append(train_files[f])
+
+    print('finished train')
+    train_labels = mlb.fit_transform(train_labels)
+    train_data = scalar.fit_transform(train_data)
+    print('finished transforming')
+    path = constants.path + specific + '_all_mlb.pkl'
+    dump(mlb, path)
+
+    path = constants.path + specific + '_all_scalar.pkl'
+    dump(scalar, path)
+
+
+    path = constants.path + specific + '_all_train.pkl'
+    data = dict()
+    data['features'] = train_data
+    data['labels'] = train_labels
+    data['keys'] = train_keys
+    dump(data, path)
+
+    print('finished dumping')
+    #classifier = MultiOutputClassifier(LinearSVC(C=10, class_weight='balanced', dual=True), n_jobs = 4)
+    classifier = MultiOutputClassifier(RandomForestClassifier(n_estimators=64, class_weight = 'balanced'), n_jobs=4)
+    classifier.fit(train_data, train_labels)
+    print('finished fitting')
+    path = constants.path + specific + '_all_classifier.pkl'
+    dump(classifier, path)
+    data = 0
+    train_data = 0
+    train_labels = 0
+    train_keys = 0
+    gc.collect()
+
+    #test_labels = []
+    test_data = []
+    test_keys = list(test_files.keys())
+    mean = scalar.mean_
+    for f in test_keys:
+        path = constants.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
+        song = readjson(path)
+        feat = getFeature(song)
+        if len(feat) < 2647:
+            length = len(feat)
+            for m in mean[length:]:
+                feat += [m]             
+        test_data.append(feat)
+    test_data = scalar.transform(test_data)
+    predictions = classifier.predict(test_data)
+    print('finished predictions')
+    genre_predictions = mlb.inverse_transform(predictions)
+    write(genre_predictions, test_keys, specific)
+    print('finished writing predictions')
 def write(labels, keys, specific):
     with open(constants.path + specific + '_train_test.tsv', 'wb') as f:
         for n, key in enumerate(keys):

@@ -143,7 +143,31 @@ def classify(train_features, train_labels, test_features, test_labels, genre = '
         return classifySklearn(train_features, train_labels, test_features, test_labels, genre, knC = KNeighborsClassifier(13))
     else:
         return classifySklearn(train_features, train_labels, test_features, test_labels, genre, AdaBoostClassifier())
+def getAllFeatures(data):
+    features = list(data['lowlevel'].keys()) + list(data['tonal'].keys()) + list(data['rhythm'].keys())
+    features.remove('key_key')
+    features.remove('key_scale')
+    features.remove('chords_key')
+    features.remove('chords_scale')
+    features.remove('beats_position')
 
+    vect = []
+    for feature in features:
+        c = 0
+        if feature in data['lowlevel'].keys():
+            c = data['lowlevel'][feature]
+        elif feature in data['tonal'].keys():
+            c = data['tonal'][feature]
+        else:
+            c = data['rhythm'][feature]
+
+        if isinstance(c, dict):
+            c = flatten(c.values())
+        elif isinstance(c, float) or isinstance(c, int):
+            c = [c]
+        #length[feature] = max(len(c), length[feature])
+        vect += c
+    return vect
 def extract(string, data):
     """Extracts and reformats the data
     """
