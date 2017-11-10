@@ -304,7 +304,7 @@ if __name__ == "__main__":
 
     train_files = processTsv(train_file)
     test_files = processTsv(test_file)
-    setup(train_files, test_files, specific)
+    mycode(train_files, test_files, specific)
     """
     with open(constants.path + specific + '_scalar.pkl', 'rb') as data_file:
         scalar = pickle.load(data_file)
