@@ -87,15 +87,22 @@ def mycode(train_files, test_files, specific):
     train_labels = []
     train_data = []
     train_keys = []
-    for f in train_files.keys():
+    keys = list(train_files.keys())
+    random.shuffle(keys)
+    subset = 80000
+    count = 0
+    for f in keys[:subset]:
+        count += 1
         path = constants.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
         song = readjson(path)
         feat = getAllFeatures(song)
         if len(feat) != 2647:
-             continue
+            continue
         train_keys.append(f)
         train_data.append(feat)
         train_labels.append(train_files[f])
+        if count % 10000 == 0:
+            print("on ", count, "length of keys: ", len(train_keys))
 
     print('finished train')
     train_labels = mlb.fit_transform(train_labels)
@@ -117,7 +124,11 @@ def mycode(train_files, test_files, specific):
 
     print('finished dumping')
     #classifier = MultiOutputClassifier(LinearSVC(C=10, class_weight='balanced', dual=True), n_jobs = 4)
-    classifier = MultiOutputClassifier(RandomForestClassifier(n_estimators=64, class_weight = 'balanced'), n_jobs=4)
+    classifier = MultiOutputClassifier(RandomForestClassifier(n_estimators=32, class_weight = 'balanced'), n_jobs=4)
+    data = 0
+    train_files = 0
+    keys = 0
+    gc.collect()
     classifier.fit(train_data, train_labels)
     print('finished fitting')
     path = constants.path + specific + '_all_classifier.pkl'
