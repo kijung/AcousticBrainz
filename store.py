@@ -314,9 +314,13 @@ if __name__ == "__main__":
     train_file = constants.path + 'acousticbrainz-mediaeval2017-' + specific + '-train-train.tsv'
     test_file = constants.path + 'acousticbrainz-mediaeval2017-' + specific + '-train-test.tsv'
 
-    train_files = processTsv(train_file)
-    test_files = processTsv(test_file)
-    mycode(train_files, test_files, specific)
+    #train_files = processTsv(train_file)
+    #test_files = processTsv(test_file)
+    path = constants.path + specific + '_all_classifier.pkl'
+    with open(path, 'rb') as data_file:
+        classifier = pickle.load(data_file)
+    print(classifier.get_params())
+    #mycode(train_files, test_files, specific)
     """
     with open(constants.path + specific + '_scalar.pkl', 'rb') as data_file:
         scalar = pickle.load(data_file)
