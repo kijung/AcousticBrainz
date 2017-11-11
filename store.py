@@ -114,7 +114,7 @@ def mycode(train_files, test_files, specific):
     path = constants.path + specific + '_all_scalar.pkl'
     dump(scalar, path)
 
-
+    print(np.shape(train_data))
     path = constants.path + specific + '_all_train.pkl'
     data = dict()
     data['features'] = train_data
@@ -127,6 +127,7 @@ def mycode(train_files, test_files, specific):
     classifier = MultiOutputClassifier(RandomForestClassifier(n_estimators=32, class_weight = 'balanced'), n_jobs=4)
     data = 0
     train_files = 0
+    train_keys = 0
     keys = 0
     gc.collect()
     classifier.fit(train_data, train_labels)
