@@ -81,7 +81,9 @@ def setup(train_files, test_files, specific):
     write(genre_predictions, test_keys, specific)
     print('finished writing predictions')
 
-def mycode(train_files, test_files, specific):
+def mycode(train_files, test_files, specific, indicies):
+    indicies = np.array(indicies)
+    indicies = indicies[:391]
     scalar = StandardScaler()
     mlb = MultiLabelBinarizer()
     train_labels = []
@@ -89,7 +91,7 @@ def mycode(train_files, test_files, specific):
     train_keys = []
     keys = list(train_files.keys())
     random.shuffle(keys)
-    subset = 80000
+    subset = len(keys)
     count = 0
     for f in keys[:subset]:
         count += 1
@@ -98,6 +100,8 @@ def mycode(train_files, test_files, specific):
         feat = getAllFeatures(song)
         if len(feat) != 2647:
             continue
+        feat = np.array(feat)
+        feat = feat[indicies]
         train_keys.append(f)
         train_data.append(feat)
         train_labels.append(train_files[f])
@@ -108,14 +112,14 @@ def mycode(train_files, test_files, specific):
     train_labels = mlb.fit_transform(train_labels)
     train_data = scalar.fit_transform(train_data)
     print('finished transforming')
-    path = constants.path + specific + '_all_mlb.pkl'
+    path = constants.path + specific + '_all2_mlb.pkl'
     dump(mlb, path)
 
-    path = constants.path + specific + '_all_scalar.pkl'
+    path = constants.path + specific + '_all2_scalar.pkl'
     dump(scalar, path)
 
     print(np.shape(train_data))
-    path = constants.path + specific + '_all_train.pkl'
+    path = constants.path + specific + '_all2_train.pkl'
     data = dict()
     data['features'] = train_data
     data['labels'] = train_labels
@@ -123,8 +127,8 @@ def mycode(train_files, test_files, specific):
     dump(data, path)
 
     print('finished dumping')
-    #classifier = MultiOutputClassifier(LinearSVC(C=10, class_weight='balanced', dual=True), n_jobs = 4)
-    classifier = MultiOutputClassifier(RandomForestClassifier(n_estimators=32, class_weight = 'balanced'), n_jobs=4)
+    classifier = MultiOutputClassifier(LinearSVC(C=10, class_weight='balanced', dual=True), n_jobs = 4)
+    #classifier = MultiOutputClassifier(RandomForestClassifier(n_estimators=32, class_weight = 'balanced'), n_jobs=4)
     data = 0
     train_files = 0
     train_keys = 0
@@ -132,7 +136,7 @@ def mycode(train_files, test_files, specific):
     gc.collect()
     classifier.fit(train_data, train_labels)
     print('finished fitting')
-    path = constants.path + specific + '_all_classifier.pkl'
+    path = constants.path + specific + '_all2_classifier.pkl'
     dump(classifier, path)
     data = 0
     train_data = 0
@@ -147,11 +151,15 @@ def mycode(train_files, test_files, specific):
     for f in test_keys:
         path = constants.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
         song = readjson(path)
-        feat = getFeature(song)
+        feat = getAllFeatures(song)
+        """
         if len(feat) < 2647:
             length = len(feat)
             for m in mean[length:]:
-                feat += [m]             
+                feat += [m]
+        """
+        feat = np.array(feat)
+        feat = feat[indicies]             
         test_data.append(feat)
     test_data = scalar.transform(test_data)
     predictions = classifier.predict(test_data)
@@ -314,8 +322,13 @@ if __name__ == "__main__":
     train_file = constants.path + 'acousticbrainz-mediaeval2017-' + specific + '-train-train.tsv'
     test_file = constants.path + 'acousticbrainz-mediaeval2017-' + specific + '-train-test.tsv'
 
-    #train_files = processTsv(train_file)
-    #test_files = processTsv(test_file)
+    train_files = processTsv(train_file)
+    test_files = processTsv(test_file)
+    path = constants.path + specific + '_indicies.pkl'
+    with open(path, 'rb') as data_file:
+        indicies = pickle.load(data_file)
+    mycode(train_files, test_files, specific, indicies)
+    """
     path = constants.path + specific + '_all_classifier.pkl'
     with open(path, 'rb') as data_file:
         classifier = pickle.load(data_file)
@@ -335,6 +348,7 @@ if __name__ == "__main__":
     dump(indicies, path)
     #print(indicies[:20])
     #mycode(train_files, test_files, specific)
+    """
     """
     with open(constants.path + specific + '_scalar.pkl', 'rb') as data_file:
         scalar = pickle.load(data_file)
