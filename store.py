@@ -319,7 +319,21 @@ if __name__ == "__main__":
     path = constants.path + specific + '_all_classifier.pkl'
     with open(path, 'rb') as data_file:
         classifier = pickle.load(data_file)
-    print(classifier.get_params())
+    #print(classifier.estimators_)
+    path = constants.path + specific + '_all_mlb.pkl'
+    with open(path, 'rb') as data_file:
+        mlb = pickle.load(data_file)
+    #print(mlb.classes_)
+    indicies = [0 for n in range(2647)]
+    for cl in classifier.estimators_:
+        importances = cl.feature_importances_
+        for n in range(len(importances)):
+            indicies[n] += importances[n]
+    s = indicies
+    indicies = sorted(range(len(s)), key=lambda k: s[k], reverse=True)
+    path = constants.path + specific + '_indicies.pkl'
+    dump(indicies, path)
+    #print(indicies[:20])
     #mycode(train_files, test_files, specific)
     """
     with open(constants.path + specific + '_scalar.pkl', 'rb') as data_file:
