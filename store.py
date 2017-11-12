@@ -91,7 +91,7 @@ def mycode(train_files, test_files, specific, indicies):
     train_keys = []
     keys = list(train_files.keys())
     random.shuffle(keys)
-    subset = len(keys)
+    subset = 80000#len(keys)
     count = 0
     for f in keys[:subset]:
         count += 1
@@ -127,8 +127,8 @@ def mycode(train_files, test_files, specific, indicies):
     dump(data, path)
 
     print('finished dumping')
-    classifier = MultiOutputClassifier(LinearSVC(C=10, class_weight='balanced', dual=True), n_jobs = 4)
-    #classifier = MultiOutputClassifier(RandomForestClassifier(n_estimators=32, class_weight = 'balanced'), n_jobs=4)
+    #classifier = MultiOutputClassifier(LinearSVC(C=10, class_weight='balanced', dual=True), n_jobs = 4)
+    classifier = MultiOutputClassifier(RandomForestClassifier(n_estimators=32, class_weight = 'balanced'), n_jobs=4)
     data = 0
     train_files = 0
     train_keys = 0
@@ -324,9 +324,12 @@ if __name__ == "__main__":
 
     train_files = processTsv(train_file)
     test_files = processTsv(test_file)
+    """
     path = constants.path + specific + '_indicies.pkl'
     with open(path, 'rb') as data_file:
         indicies = pickle.load(data_file)
+    """
+    indicies = np.arange(1, 2648)
     mycode(train_files, test_files, specific, indicies)
     """
     path = constants.path + specific + '_all_classifier.pkl'
