@@ -83,7 +83,7 @@ def setup(train_files, test_files, specific):
 
 def mycode(train_files, test_files, specific, indicies):
     indicies = np.array(indicies)
-    indicies = indicies[:391]
+    indicies = indicies[:len(indicies)//4]
     scalar = StandardScaler()
     mlb = MultiLabelBinarizer()
     train_labels = []
@@ -138,6 +138,15 @@ def mycode(train_files, test_files, specific, indicies):
     print('finished fitting')
     path = constants.path + specific + '_all2_classifier.pkl'
     dump(classifier, path)
+    
+    """
+    with open(constants.path + specific + '_all2_scalar.pkl', 'rb') as data_file:
+        scalar = pickle.load(data_file)
+    with open(constants.path + specific + '_all2_mlb.pkl', 'rb') as data_file:
+        mlb = pickle.load(data_file)
+    with open(constants.path + specific + '_all2_classifier.pkl', 'rb') as data_file:
+        classifier = pickle.load(data_file)
+    """
     data = 0
     train_data = 0
     train_labels = 0
@@ -158,6 +167,15 @@ def mycode(train_files, test_files, specific, indicies):
             for m in mean[length:]:
                 feat += [m]
         """
+        #feat = np.array(feat)
+        if len(feat) < 2647:
+            length = len(feat)
+            print('Before: ', length)
+            for m in range(2647 - length):
+                feat += [np.random.rand()]
+            #m = mean[indicies.index(2647)]
+            #feat += [m]
+            print('After: ', len(feat))
         feat = np.array(feat)
         feat = feat[indicies]             
         test_data.append(feat)
