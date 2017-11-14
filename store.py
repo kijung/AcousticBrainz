@@ -439,7 +439,7 @@ def storeData(train_files, test_files, specific):
     keys = list(train_files.keys())
     with open(constants.path + specific + '_scalar.pkl', 'rb') as data_file:
         scalar = pickle.load(data_file)
-     with open(constants.path + specific + '_all_mlb.pkl', 'rb') as data_file:
+    with open(constants.path + specific + '_all_mlb.pkl', 'rb') as data_file:
         mlb = pickle.load(data_file)   
     for n in range(4):
         start = len(train_files)//4 * n
