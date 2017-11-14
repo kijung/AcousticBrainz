@@ -83,7 +83,7 @@ def setup(train_files, test_files, specific):
 
 def mycode(train_files, test_files, specific, indicies):
     indicies = np.array(indicies)
-    indicies = indicies[:len(indicies)//4]
+    #indicies = indicies[:len(indicies)//4]
     scalar = StandardScaler()
     mlb = MultiLabelBinarizer()
     train_labels = []
@@ -91,7 +91,7 @@ def mycode(train_files, test_files, specific, indicies):
     train_keys = []
     keys = list(train_files.keys())
     random.shuffle(keys)
-    subset = 80000#len(keys)
+    subset = 150000#len(keys)
     count = 0
     for f in keys[:subset]:
         count += 1
@@ -347,7 +347,7 @@ if __name__ == "__main__":
     with open(path, 'rb') as data_file:
         indicies = pickle.load(data_file)
     """
-    indicies = np.arange(1, 2648)
+    indicies = np.arange(0, 2647)
     mycode(train_files, test_files, specific, indicies)
     """
     path = constants.path + specific + '_all_classifier.pkl'
