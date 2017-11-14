@@ -185,6 +185,111 @@ def mycode(train_files, test_files, specific, indicies):
     genre_predictions = mlb.inverse_transform(predictions)
     write(genre_predictions, test_keys, specific)
     print('finished writing predictions')
+
+def mycode2(classes, train_files, test_files, specific):
+    for genre in classes:
+        indicies = np.array(indicies)
+        scalar = StandardScaler()
+        mlb = MultiLabelBinarizer()
+        train_labels = []
+        train_data = []
+        train_keys = []
+        keys = list(train_files.keys())
+        random.shuffle(keys)
+        subset = len(keys)
+        count = 0
+        for f in keys[:subset]:
+            count += 1
+            path = constants.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
+            song = readjson(path)
+            feat = getAllFeatures(song)
+            if len(feat) != 2647:
+                continue
+            feat = np.array(feat)
+            feat = feat[indicies]
+            train_keys.append(f)
+            train_data.append(feat)
+            train_labels.append(train_files[f])
+            if count % 10000 == 0:
+                print("on ", count, "length of keys: ", len(train_keys))
+
+        print('finished train')
+        train_labels = mlb.fit_transform(train_labels)
+        train_data = scalar.fit_transform(train_data)
+        print('finished transforming')
+        path = constants.path + specific + '_all2_mlb.pkl'
+        dump(mlb, path)
+
+        path = constants.path + specific + '_all2_scalar.pkl'
+        dump(scalar, path)
+
+        print(np.shape(train_data))
+        path = constants.path + specific + '_all2_train.pkl'
+        data = dict()
+        data['features'] = train_data
+        data['labels'] = train_labels
+        data['keys'] = train_keys
+        dump(data, path)
+
+        print('finished dumping')
+        #classifier = MultiOutputClassifier(LinearSVC(C=10, class_weight='balanced', dual=True), n_jobs = 4)
+        classifier = MultiOutputClassifier(RandomForestClassifier(n_estimators=32, class_weight = 'balanced'), n_jobs=4)
+        data = 0
+        train_files = 0
+        train_keys = 0
+        keys = 0
+        gc.collect()
+        classifier.fit(train_data, train_labels)
+        print('finished fitting')
+        path = constants.path + specific + '_all2_classifier.pkl'
+        dump(classifier, path)
+        
+        """
+        with open(constants.path + specific + '_all2_scalar.pkl', 'rb') as data_file:
+            scalar = pickle.load(data_file)
+        with open(constants.path + specific + '_all2_mlb.pkl', 'rb') as data_file:
+            mlb = pickle.load(data_file)
+        with open(constants.path + specific + '_all2_classifier.pkl', 'rb') as data_file:
+            classifier = pickle.load(data_file)
+        """
+        data = 0
+        train_data = 0
+        train_labels = 0
+        train_keys = 0
+        gc.collect()
+
+        #test_labels = []
+        test_data = []
+        test_keys = list(test_files.keys())
+        mean = scalar.mean_
+        for f in test_keys:
+            path = constants.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
+            song = readjson(path)
+            feat = getAllFeatures(song)
+            """
+            if len(feat) < 2647:
+                length = len(feat)
+                for m in mean[length:]:
+                    feat += [m]
+            """
+            #feat = np.array(feat)
+            if len(feat) < 2647:
+                length = len(feat)
+                print('Before: ', length)
+                for m in range(2647 - length):
+                    feat += [np.random.rand()]
+                #m = mean[indicies.index(2647)]
+                #feat += [m]
+                print('After: ', len(feat))
+            feat = np.array(feat)
+            feat = feat[indicies]             
+            test_data.append(feat)
+        test_data = scalar.transform(test_data)
+        predictions = classifier.predict(test_data)
+        print('finished predictions')
+        genre_predictions = mlb.inverse_transform(predictions)
+        write(genre_predictions, test_keys, specific)
+        print('finished writing predictions')
 def write(labels, keys, specific):
     with open(constants.path + specific + '_train_test.tsv', 'wb') as f:
         for n, key in enumerate(keys):
@@ -285,6 +390,7 @@ def saveFeaturesTest(train_files, test_files, specific, scalar, part):
     used = 0
     gc.collect()
 
+"""
 def train(classifier):
     xtrain = []
     ytrain = []
@@ -309,7 +415,8 @@ def train(classifier):
 
     with open(constants.path + specific + '_classifier.pkl', 'wb') as data_file:
         pickle.dump(classifier, data_file)
-
+"""
+"""
 def predict(classifier, part):
     with open(constants.path + specific + part + '_' + 'test.pkl', 'rb') as data_file:
         data = pickle.load(data_file)
@@ -323,6 +430,65 @@ def predict(classifier, part):
 
     ytest = mlb.inverse_transform(classifier.predict(xtest))
     return ytest
+"""
+def storeData(train_files, test_files, specific):
+    #batches of 4?
+    train_data = dict()
+    train_data['features'] = []
+    train_data['labels'] = []
+    keys = list(train_files.keys())
+    with open(constants.path + specific + '_scalar.pkl', 'rb') as data_file:
+        scalar = pickle.load(data_file)
+     with open(constants.path + specific + '_all_mlb.pkl', 'rb') as data_file:
+        mlb = pickle.load(data_file)   
+    for n in range(4):
+        start = len(train_files)//4 * n
+        end = (n+1) * len(train_files)//4
+        features = []
+        labels = []
+        for f in keys[start:end]:
+            path = constants.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
+            song = readjson(path)
+            feat = getAllFeatures(song)
+            if len(feat) == 2647:
+                features.append(feat)
+                labels.append(train_files[f])
+        features = scalar.transform(features)
+        labels = mlb.transform(labels)
+        train_data['features'] = features
+        train_data['labels'] = labels
+        with open(constants.path + specific + '/train' + str(n) + '.pkl', 'wb') as data_file:
+            pickle.dump(train_data, data_file)
+        features = 0
+        labels = 0
+        train_data = 0
+        gc.collect()
+
+    """
+    keys = list(test_files.keys())
+    for n in range(4):
+        start = len(test_files)//4 * n
+        end = (n+1) * len(test_files)//4
+        features = []
+        labels = []
+        for f in keys[start:end]:
+            path = constants.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
+            song = readjson(path)
+            feat = getAllFeatures(song)
+            if len(feat) == 2647:
+                features.append(feat)
+                labels.append(train_files[f])
+        features = scalar.transform(features)
+        labels = mlb.transform(labels)
+        train_data['features'] = features
+        train_data['labels'] = labels
+        with open(constants.path + specific + '/test' + str(n) + '.pkl', 'wb') as data_file:
+            pickle.dump(train_data, data_file)
+        features = 0
+        labels = 0
+        train_data = 0
+        gc.collect()   
+    """
 
     #return classifier
 if __name__ == "__main__":
@@ -347,10 +513,11 @@ if __name__ == "__main__":
     with open(path, 'rb') as data_file:
         indicies = pickle.load(data_file)
     """
-    indicies = np.arange(0, 2647)
-    mycode(train_files, test_files, specific, indicies)
+    storeData(train_files, test_files, specific)
+    #indicies = np.arange(0, 2647)
+    #mycode(train_files, test_files, specific, indicies)
     """
-    path = constants.path + specific + '_all_classifier.pkl'
+    path = constants.path + specific + '_all2_classifier.pkl'
     with open(path, 'rb') as data_file:
         classifier = pickle.load(data_file)
     #print(classifier.estimators_)
@@ -358,15 +525,22 @@ if __name__ == "__main__":
     with open(path, 'rb') as data_file:
         mlb = pickle.load(data_file)
     #print(mlb.classes_)
-    indicies = [0 for n in range(2647)]
-    for cl in classifier.estimators_:
+    #indicies = [0 for n in range(2647)]
+    classes = dict()
+    for m in mlb.classes_:
+        classes[m] = 0
+    for n, cl in enumerate(classifier.estimators_):
         importances = cl.feature_importances_
-        for n in range(len(importances)):
-            indicies[n] += importances[n]
-    s = indicies
-    indicies = sorted(range(len(s)), key=lambda k: s[k], reverse=True)
-    path = constants.path + specific + '_indicies.pkl'
-    dump(indicies, path)
+        s = importances
+        importances = sorted(range(len(s)), key=lambda k: s[k], reverse=True)
+        classes[n] = importances
+
+    #s = indicies
+    #indicies = sorted(range(len(s)), key=lambda k: s[k], reverse=True)
+    path = constants.path + specific + '_genre_indicies.pkl'
+    dump(classes, path)
+
+    mycode2(classes, train_files, test_files, specific)
     #print(indicies[:20])
     #mycode(train_files, test_files, specific)
     """
