@@ -507,7 +507,7 @@ def scaleData(train_files, test_files,specific):
         with open(constants.path + specific + '/train' + str(n) + '.pkl', 'wb') as data_file:
             pickle.dump(data, data_file)
 def trainData(specific):
-    classifier = MultiOutputClassifier(SGDClassifier(class_weight = 'balanced'), n_jobs=4)
+    classifier = MultiOutputClassifier(SGDClassifier(), n_jobs=4)
     #features = scalar.transform(features)
     for n in range(4):
         with open(constants.path + specific + '/train' + str(n) + '.pkl', 'rb') as data_file:
