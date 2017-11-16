@@ -437,8 +437,9 @@ def storeData(train_files, test_files, specific):
     train_data['features'] = []
     train_data['labels'] = []
     keys = list(train_files.keys())
-    with open(constants.path + specific + '_scalar.pkl', 'rb') as data_file:
-        scalar = pickle.load(data_file)
+    scalar = StandardScaler()
+    #with open(constants.path + specific + '_scalar.pkl', 'rb') as data_file:
+    #    scalar = pickle.load(data_file)
     with open(constants.path + specific + '_all_mlb.pkl', 'rb') as data_file:
         mlb = pickle.load(data_file)   
     for n in range(4):
@@ -453,7 +454,7 @@ def storeData(train_files, test_files, specific):
             if len(feat) == 2647:
                 features.append(feat)
                 labels.append(train_files[f])
-        features = scalar.transform(features)
+        scalar.partial_fit(features)
         labels = mlb.transform(labels)
         train_data['features'] = features
         train_data['labels'] = labels
@@ -461,9 +462,11 @@ def storeData(train_files, test_files, specific):
             pickle.dump(train_data, data_file)
         features = 0
         labels = 0
-        train_data = 0
+        train_data['features'] = []
+        train_data['labels'] = []
         gc.collect()
-
+    with open(constants.path + specific + '/scalar.pkl', 'wb') as data_file:
+        pickle.dump(scalar, data_file)
     """
     keys = list(test_files.keys())
     for n in range(4):
@@ -489,7 +492,17 @@ def storeData(train_files, test_files, specific):
         train_data = 0
         gc.collect()   
     """
-
+def scaleData(train_files, test_files,specific):
+    with open(constants.path + specific + '/scalar.pkl', 'rb') as data_file:
+        scalar = pickle.load(data_file)
+    for n in range(4):
+        with open(constants.path + specific + '/train' + str(n) + '.pkl', 'rb') as data_file:
+            data = pickle.load(data_file)
+        features = data['features']
+        features = scalar.transform(features)
+        data['features'] = features
+        with open(constants.path + specific + '/train' + str(n) + '.pkl', 'wb') as data_file:
+            pickle.dump(data, data_file)
     #return classifier
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="This script implements task 1 of the MediaEval 2017 challenge.")
@@ -513,7 +526,8 @@ if __name__ == "__main__":
     with open(path, 'rb') as data_file:
         indicies = pickle.load(data_file)
     """
-    storeData(train_files, test_files, specific)
+    #storeData(train_files, test_files, specific)
+    scaleData(train_files, test_files, specific)
     #indicies = np.arange(0, 2647)
     #mycode(train_files, test_files, specific, indicies)
     """
