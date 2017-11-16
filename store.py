@@ -513,9 +513,10 @@ def trainData(specific):
         with open(constants.path + specific + '/train' + str(n) + '.pkl', 'rb') as data_file:
             data = pickle.load(data_file)
         features = data['features']
-        labels = data['labels']
+        labels = np.array(data['labels'])
         weights = compute_sample_weight('balanced', labels)
-        classifier.partial_fit(features, labels, sample_weight = weights)
+        classes = [np.unique(labels[:, i]) for i in range(labels.shape[1])]
+        classifier.partial_fit(features, labels, classes = classes, sample_weight = weights)
         #data['features'] = features
     with open(constants.path + specific + '/classifier.pkl', 'wb') as data_file:
         pickle.dump(classifier, data_file)    
