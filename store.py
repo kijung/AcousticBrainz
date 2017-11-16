@@ -519,7 +519,42 @@ def trainData(specific):
         classifier.partial_fit(features, labels, classes = classes, sample_weight = weights)
         #data['features'] = features
     with open(constants.path + specific + '/classifier.pkl', 'wb') as data_file:
-        pickle.dump(classifier, data_file)    
+        pickle.dump(classifier, data_file)
+def testData(test_files, specific):
+    with open(constants.path + specific + '/scalar.pkl', 'rb') as data_file:
+        scalar = pickle.load(data_file)
+
+    with open(constants.path + specific + '_all_mlb.pkl', 'rb') as data_file:
+        mlb = pickle.load(data_file)
+
+    keys = list(test_files.keys())
+    test_data = dict()
+    mean = scalar.mean_
+    for n in range(4):
+        start = len(test_files)//4 * n
+        end = (n+1) * len(test_files)//4
+        features = []
+        labels = []
+        for f in keys[start:end]:
+            path = constants.path + 'acousticbrainz-mediaeval-train/' + f[:2] + '/' + f + '.json'
+            song = readjson(path)
+            feat = getAllFeatures(song)
+            #if len(feat) == 2647:
+            if len(feat) < 2647:
+                for m in range(len(feat), 2647):
+                    feat.append(mean[m])
+            features.append(feat)
+            labels.append(f)
+        features = scalar.transform(features)
+        #labels = mlb.transform(labels)
+        test_data['features'] = features
+        test_data['keys'] = labels
+        with open(constants.path + specific + '/test' + str(n) + '.pkl', 'wb') as data_file:
+            pickle.dump(test_data, data_file)
+        features = 0
+        labels = 0
+        test_data = dict()
+        gc.collect()
     #return classifier
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="This script implements task 1 of the MediaEval 2017 challenge.")
@@ -545,7 +580,8 @@ if __name__ == "__main__":
     """
     #storeData(train_files, test_files, specific)
     #scaleData(train_files, test_files, specific)
-    trainData(specific)
+    #trainData(specific)
+    testData(test_files, specific)
     #indicies = np.arange(0, 2647)
     #mycode(train_files, test_files, specific, indicies)
     """
