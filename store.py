@@ -7,6 +7,7 @@ from sklearn.preprocessing import normalize, StandardScaler, MultiLabelBinarizer
 from sklearn.svm import LinearSVC
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import SGDClassifier
 import cPickle as pickle
 import constants
 def dump(data, path):
@@ -499,10 +500,23 @@ def scaleData(train_files, test_files,specific):
         with open(constants.path + specific + '/train' + str(n) + '.pkl', 'rb') as data_file:
             data = pickle.load(data_file)
         features = data['features']
+        #labels = data['labels']
         features = scalar.transform(features)
         data['features'] = features
         with open(constants.path + specific + '/train' + str(n) + '.pkl', 'wb') as data_file:
             pickle.dump(data, data_file)
+def trainData(specific):
+    classifier = MultiOutputClassifier(SGDClassifier(class_weight = 'balanced'), n_jobs=4)
+    #features = scalar.transform(features)
+    for n in range(4):
+        with open(constants.path + specific + '/train' + str(n) + '.pkl', 'rb') as data_file:
+            data = pickle.load(data_file)
+        features = data['features']
+        labels = data['labels']
+        classifier.partial_fit(features, labels)
+        #data['features'] = features
+    with open(constants.path + specific + '/classifier.pkl', 'wb') as data_file:
+        pickle.dump(classifier, data_file)    
     #return classifier
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="This script implements task 1 of the MediaEval 2017 challenge.")
@@ -527,7 +541,8 @@ if __name__ == "__main__":
         indicies = pickle.load(data_file)
     """
     #storeData(train_files, test_files, specific)
-    scaleData(train_files, test_files, specific)
+    #scaleData(train_files, test_files, specific)
+    trainData(specific)
     #indicies = np.arange(0, 2647)
     #mycode(train_files, test_files, specific, indicies)
     """
