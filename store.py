@@ -8,6 +8,7 @@ from sklearn.svm import LinearSVC
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import SGDClassifier
+from sklearn.utils.class_weight import compute_sample_weight
 import cPickle as pickle
 import constants
 def dump(data, path):
@@ -513,7 +514,8 @@ def trainData(specific):
             data = pickle.load(data_file)
         features = data['features']
         labels = data['labels']
-        classifier.partial_fit(features, labels)
+        weights = compute_sample_weight('balanced', labels)
+        classifier.partial_fit(features, labels, sample_weight = weights)
         #data['features'] = features
     with open(constants.path + specific + '/classifier.pkl', 'wb') as data_file:
         pickle.dump(classifier, data_file)    
