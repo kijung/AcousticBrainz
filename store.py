@@ -528,11 +528,12 @@ def testData(test_files, specific):
         mlb = pickle.load(data_file)
 
     keys = list(test_files.keys())
-    test_data = dict()
+    #test_data = dict()
     mean = scalar.mean_
     for n in range(4):
-        start = len(test_files)//4 * n
-        end = (n+1) * len(test_files)//4
+        test_data = dict()
+        start = (n * len(test_files))//4 
+        end = ((n+1) * len(test_files))//4
         features = []
         labels = []
         for f in keys[start:end]:
@@ -553,7 +554,7 @@ def testData(test_files, specific):
             pickle.dump(test_data, data_file)
         features = 0
         labels = 0
-        test_data = dict()
+        #test_data = dict()
         gc.collect()
 def predictData(specific):
     with open(constants.path + specific + '_all_mlb.pkl', 'rb') as data_file:
@@ -565,8 +566,11 @@ def predictData(specific):
     for n in range(4):
         with open(constants.path + specific + '/test' + str(n) + '.pkl', 'rb') as data_file:
             test = pickle.load(data_file)
-        test_data += test['features']
-        test_keys += test['keys']
+        for m in test['features']:
+            test_data.append(m)
+        for m in test['keys']:
+            test_keys.append(m)
+        #test_keys += test['keys']
 
     predictions = classifier.predict(test_data)
     print('finished predictions')
@@ -599,7 +603,7 @@ if __name__ == "__main__":
     #storeData(train_files, test_files, specific)
     #scaleData(train_files, test_files, specific)
     #trainData(specific)
-    #testData(test_files, specific)
+    testData(test_files, specific)
     predictData(specific)
     #indicies = np.arange(0, 2647)
     #mycode(train_files, test_files, specific, indicies)
