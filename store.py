@@ -433,7 +433,7 @@ def predict(classifier, part):
     ytest = mlb.inverse_transform(classifier.predict(xtest))
     return ytest
 """
-def storeData(train_files, test_files, specific):
+def storeData(train_files, test_files, specific, m):
     #batches of 4?
     train_data = dict()
     train_data['features'] = []
@@ -444,9 +444,9 @@ def storeData(train_files, test_files, specific):
     #    scalar = pickle.load(data_file)
     with open(constants.path + specific + '_all_mlb.pkl', 'rb') as data_file:
         mlb = pickle.load(data_file)   
-    for n in range(4):
-        start = len(train_files)//4 * n
-        end = (n+1) * len(train_files)//4
+    for n in range(m):
+        start = len(train_files)//m * n
+        end = (n+1) * len(train_files)//m
         features = []
         labels = []
         for f in keys[start:end]:
@@ -494,10 +494,10 @@ def storeData(train_files, test_files, specific):
         train_data = 0
         gc.collect()   
     """
-def scaleData(train_files, test_files,specific):
+def scaleData(train_files, test_files,specific, m):
     with open(constants.path + specific + '/scalar.pkl', 'rb') as data_file:
         scalar = pickle.load(data_file)
-    for n in range(4):
+    for n in range(m):
         with open(constants.path + specific + '/train' + str(n) + '.pkl', 'rb') as data_file:
             data = pickle.load(data_file)
         features = data['features']
@@ -506,21 +506,22 @@ def scaleData(train_files, test_files,specific):
         data['features'] = features
         with open(constants.path + specific + '/train' + str(n) + '.pkl', 'wb') as data_file:
             pickle.dump(data, data_file)
-def trainData(specific):
-    classifier = MultiOutputClassifier(SGDClassifier(), n_jobs=4)
-    #features = scalar.transform(features)
-    for n in range(4):
+def trainData(specific, m):
+    with open(constants.path + specific + '_all_mlb.pkl', 'rb') as data_file:
+        mlb = pickle.load(data_file)
+    for n in range(m):
         with open(constants.path + specific + '/train' + str(n) + '.pkl', 'rb') as data_file:
             data = pickle.load(data_file)
         features = data['features']
         labels = np.array(data['labels'])
-        weights = compute_sample_weight('balanced', labels)
-        classes = [np.unique(labels[:, i]) for i in range(labels.shape[1])]
-        classifier.partial_fit(features, labels, classes = classes, sample_weight = weights)
+        #weights = compute_sample_weight('balanced', labels)
+        #classes = [np.unique(labels[:, i]) for i in range(labels.shape[1])]
+        classifier = MultiOutputClassifier(RandomForestClassifier(n_estimators=32, class_weight = 'balanced'), n_jobs=4)
+        classifier.fit(features, labels, classes = classes, sample_weight = weights)
         #data['features'] = features
-    with open(constants.path + specific + '/classifier.pkl', 'wb') as data_file:
-        pickle.dump(classifier, data_file)
-def testData(test_files, specific):
+        with open(constants.path + specific + '/classifier' + str(n) + '.pkl', 'wb') as data_file:
+            pickle.dump(classifier, data_file)
+def testData(test_files, specific, m):
     with open(constants.path + specific + '/scalar.pkl', 'rb') as data_file:
         scalar = pickle.load(data_file)
 
@@ -530,10 +531,10 @@ def testData(test_files, specific):
     keys = list(test_files.keys())
     #test_data = dict()
     mean = scalar.mean_
-    for n in range(4):
+    for n in range(m):
         test_data = dict()
-        start = (n * len(test_files))//4 
-        end = ((n+1) * len(test_files))//4
+        start = (n * len(test_files))//m 
+        end = ((n+1) * len(test_files))//m
         features = []
         labels = []
         for f in keys[start:end]:
@@ -600,11 +601,12 @@ if __name__ == "__main__":
     with open(path, 'rb') as data_file:
         indicies = pickle.load(data_file)
     """
-    #storeData(train_files, test_files, specific)
-    #scaleData(train_files, test_files, specific)
+    m = 3
+    storeData(train_files, test_files, specific, m)
+    scaleData(train_files, test_files, specific, m)
     #trainData(specific)
-    testData(test_files, specific)
-    predictData(specific)
+    #testData(test_files, specific)
+    #predictData(specific)
     #indicies = np.arange(0, 2647)
     #mycode(train_files, test_files, specific, indicies)
     """
