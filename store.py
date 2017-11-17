@@ -555,7 +555,7 @@ def testData(test_files, specific):
         labels = 0
         test_data = dict()
         gc.collect()
-def predictData():
+def predictData(specific):
     with open(constants.path + specific + '_all_mlb.pkl', 'rb') as data_file:
         mlb = pickle.load(data_file)
     with open(constants.path + specific + '/classifier.pkl', 'rb') as data_file:
@@ -599,7 +599,8 @@ if __name__ == "__main__":
     #storeData(train_files, test_files, specific)
     #scaleData(train_files, test_files, specific)
     #trainData(specific)
-    testData(test_files, specific)
+    #testData(test_files, specific)
+    predictData(specific)
     #indicies = np.arange(0, 2647)
     #mycode(train_files, test_files, specific, indicies)
     """
