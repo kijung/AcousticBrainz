@@ -555,6 +555,24 @@ def testData(test_files, specific):
         labels = 0
         test_data = dict()
         gc.collect()
+def predictData():
+    with open(constants.path + specific + '_all_mlb.pkl', 'rb') as data_file:
+        mlb = pickle.load(data_file)
+    with open(constants.path + specific + '/classifier.pkl', 'rb') as data_file:
+        classifier = pickle.load(data_file)
+    test_data = []
+    test_keys = []
+    for n in range(4):
+        with open(constants.path + specific + '/test' + str(n) + '.pkl', 'rb') as data_file:
+            test = pickle.load(data_file)
+        test_data += test['features']
+        test_keys += test['keys']
+
+    predictions = classifier.predict(test_data)
+    print('finished predictions')
+    genre_predictions = mlb.inverse_transform(predictions)
+    write(genre_predictions, test_keys, specific)
+    print('finished writing predictions')
     #return classifier
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="This script implements task 1 of the MediaEval 2017 challenge.")
