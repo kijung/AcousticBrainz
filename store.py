@@ -517,7 +517,7 @@ def trainData(specific, m):
         #weights = compute_sample_weight('balanced', labels)
         #classes = [np.unique(labels[:, i]) for i in range(labels.shape[1])]
         classifier = MultiOutputClassifier(RandomForestClassifier(n_estimators=32, class_weight = 'balanced'), n_jobs=4)
-        classifier.fit(features, labels, classes = classes, sample_weight = weights)
+        classifier.fit(features, labels) #classes = classes, sample_weight = weights)
         #data['features'] = features
         with open(constants.path + specific + '/classifier' + str(n) + '.pkl', 'wb') as data_file:
             pickle.dump(classifier, data_file)
@@ -557,27 +557,33 @@ def testData(test_files, specific, m):
         labels = 0
         #test_data = dict()
         gc.collect()
-def predictData(specific):
+def predictData(specific, m):
     with open(constants.path + specific + '_all_mlb.pkl', 'rb') as data_file:
         mlb = pickle.load(data_file)
-    with open(constants.path + specific + '/classifier.pkl', 'rb') as data_file:
-        classifier = pickle.load(data_file)
+    #with open(constants.path + specific + '/classifier.pkl', 'rb') as data_file:
+    #    classifier = pickle.load(data_file)
     test_data = []
     test_keys = []
-    for n in range(4):
+    for n in range(m):
+        #with open(constants.path + specific + 
         with open(constants.path + specific + '/test' + str(n) + '.pkl', 'rb') as data_file:
             test = pickle.load(data_file)
-        for m in test['features']:
-            test_data.append(m)
-        for m in test['keys']:
-            test_keys.append(m)
+        for m2 in test['features']:
+            test_data.append(m2)
+        for m2 in test['keys']:
+            test_keys.append(m2)
         #test_keys += test['keys']
-
-    predictions = classifier.predict(test_data)
-    print('finished predictions')
-    genre_predictions = mlb.inverse_transform(predictions)
-    write(genre_predictions, test_keys, specific)
-    print('finished writing predictions')
+    pred = 0
+    for n in range(m):
+        with open(constants.path + specific + '/classifier' + str(n) + '.pkl', 'rb') as data_file: 
+            classifier = pickle.load(data_file)
+        predictions = classifier.predict(test_data)
+    print(type(predictions[0]))
+    #predictions = classifier.predict(test_data)
+    #print('finished predictions')
+    #genre_predictions = mlb.inverse_transform(predictions)
+    #write(genre_predictions, test_keys, specific)
+    #print('finished writing predictions')
     #return classifier
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="This script implements task 1 of the MediaEval 2017 challenge.")
@@ -602,11 +608,11 @@ if __name__ == "__main__":
         indicies = pickle.load(data_file)
     """
     m = 3
-    storeData(train_files, test_files, specific, m)
-    scaleData(train_files, test_files, specific, m)
-    #trainData(specific)
-    #testData(test_files, specific)
-    #predictData(specific)
+    #storeData(train_files, test_files, specific, m)
+    #scaleData(train_files, test_files, specific, m)
+    #trainData(specific, m)
+    #testData(test_files, specific,m)
+    predictData(specific, m)
     #indicies = np.arange(0, 2647)
     #mycode(train_files, test_files, specific, indicies)
     """
