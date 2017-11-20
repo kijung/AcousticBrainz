@@ -441,6 +441,7 @@ def storeData(train_files, test_files, specific, m):
     keys = list(train_files.keys())
     random.shuffle(keys)
     scalar = StandardScaler()
+    
     #with open(constants.path + specific + '_scalar.pkl', 'rb') as data_file:
     #    scalar = pickle.load(data_file)
     with open(constants.path + specific + '_all_mlb.pkl', 'rb') as data_file:
