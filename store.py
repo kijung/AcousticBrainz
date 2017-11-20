@@ -439,6 +439,7 @@ def storeData(train_files, test_files, specific, m):
     train_data['features'] = []
     train_data['labels'] = []
     keys = list(train_files.keys())
+    random.shuffle(keys)
     scalar = StandardScaler()
     #with open(constants.path + specific + '_scalar.pkl', 'rb') as data_file:
     #    scalar = pickle.load(data_file)
@@ -673,8 +674,8 @@ if __name__ == "__main__":
         indicies = pickle.load(data_file)
     """
     m = 3
-    #storeData(train_files, test_files, specific, m)
-    #scaleData(train_files, test_files, specific, m)
+    storeData(train_files, test_files, specific, m)
+    scaleData(train_files, test_files, specific, m)
     trainData(specific, m)
     testData(test_files, specific,m)
     predictData(specific, m)
